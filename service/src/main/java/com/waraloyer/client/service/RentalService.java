@@ -22,14 +22,17 @@ public class RentalService {
     }
 
     public List<Rental> findByUserId(Long userId) {
+        // Logique pour trouver tous les loyers d'un utilisateur
         return rentalRepository.findByUserId(userId);
     }
 
     public Optional<Rental> findById(String id) {
+        // Logique pour trouver un loyer par son ID
         return rentalRepository.findById(id);
     }
 
     public Rental save(Rental rental, User user) {
+        // Logique pour sauvegarder un nouveau loyer ou mettre à jour un existant
         if (rental.getId() == null || rental.getId().isEmpty()) {
             rental.setId(UUID.randomUUID().toString());
             rental.setUser(user);
@@ -44,6 +47,7 @@ public class RentalService {
     }
 
     public Rental markAsPaid(String id, Long userId) {
+        // Logique pour marquer un loyer comme payé
         Optional<Rental> rentalOptional = rentalRepository.findById(id);
         if (rentalOptional.isPresent() && rentalOptional.get().getUser().getId().equals(userId)) {
             Rental rental = rentalOptional.get();

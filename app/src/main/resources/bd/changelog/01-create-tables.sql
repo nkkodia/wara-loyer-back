@@ -6,7 +6,9 @@ CREATE TABLE app_user (
                           email VARCHAR(255) NOT NULL UNIQUE,
                           first_name VARCHAR(255) NOT NULL,
                           last_name VARCHAR(255) NOT NULL,
-                          created_at TIMESTAMP DEFAULT NOW()
+                          created_at TIMESTAMP DEFAULT NOW(),
+                          subscription_end_date DATE NOT NULL
+
 );
 
 -- Création de la table 'client_config' pour les paramètres utilisateur

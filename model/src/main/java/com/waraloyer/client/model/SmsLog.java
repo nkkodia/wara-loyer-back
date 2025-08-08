@@ -28,4 +28,5 @@ public class SmsLog {
     private String message;
     private LocalDateTime sentDate;
     private String status;
+    private String toPhoneNumber;
 }
