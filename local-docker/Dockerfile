@@ -31,14 +31,6 @@ COPY --from=mvn_builder /usr/src/source/app/target/*.jar application.jar
 # Exposez le port sur lequel votre application Spring Boot écoute
 EXPOSE 8080
 
-# Installer 'postgresql-client' qui contient 'pg_isready' pour le script d'attente.
-# CHANGEMENT ICI : Utilisation de apt-get pour les images basées sur Debian
-RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
-
-# Ajouter le script d'attente simplifié dans le conteneur et le rendre exécutable.
-# Le script doit être placé dans le même répertoire que votre Dockerfile localement.
-COPY --chmod=0755 local-docker/wait-for-db.sh /usr/local/bin/wait-for-db.sh
-
 # Commande pour exécuter l'application.
 # Utilise le script d'attente avant de lancer l'application Java.
-ENTRYPOINT ["/usr/local/bin/wait-for-db.sh", "java", "-jar", "application.jar"]
+ENTRYPOINT ["java", "-jar", "application.jar"]
