@@ -1,0 +1,40 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+
+    <!-- Configuration des serveurs pour l'authentification -->
+    <servers>
+
+    </servers>
+
+        <!-- Configuration des miroirs -->
+<mirrors>
+<mirror>
+    <id>central</id>
+    <mirrorOf>central</mirrorOf>
+    <url>https://repo.maven.apache.org/maven2</url>
+</mirror>
+</mirrors>
+
+        <!-- Profils pour gérer différentes configurations -->
+<profiles>
+<profile>
+    <id>development</id>
+    <properties>
+        <env>dev</env> <!-- Variable d'environnement pour indiquer que nous sommes en développement -->
+    </properties>
+</profile>
+
+<profile>
+    <id>production</id>
+    <properties>
+        <env>prod</env> <!-- Variable d'environnement pour indiquer que nous sommes en production -->
+    </properties>
+</profile>
+</profiles>
+
+        <!-- Profils actifs par défaut -->
+<activeProfiles>
+<activeProfile>development</activeProfile> <!-- Activer par défaut le profil de développement -->
+</activeProfiles>
+</settings>

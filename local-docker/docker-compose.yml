@@ -1,0 +1,59 @@
+services:
+  # Définit le service de base de données PostgreSQL
+  poc_db_service:
+    image: postgres:16-alpine
+    container_name: bijou_poc_postgresql
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck: # Healthcheck corrigé pour attendre la base 'postgres' par défaut
+      test: ["CMD-SHELL", "pg_isready -U devuser -d postgres"] # Vérifie la base par défaut
+      interval: 5s # Intervalle plus court
+      timeout: 5s # Timeout plus court
+      retries: 10 # Nombre de retries suffisant
+      start_period: 60s # Période de démarrage initiale plus longue pour l'initdb
+
+  # Définit le service de votre application Spring Boot
+  app_service:
+    build:
+      context: ..
+      dockerfile: local-docker/Dockerfile
+    container_name: alert_aml_app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://poc_db_service:5432/DB_AML_Central
+      SPRING_DATASOURCE_USERNAME: devuser
+      SPRING_DATASOURCE_PASSWORD: devpassword
+      SPRING_CLIENT_DATASOURCES_BIJOUTERIE_URL: jdbc:postgresql://poc_db_service:5432/DB_Bijouterie
+      SPRING_CLIENT_DATASOURCES_BIJOUTERIE_USERNAME: devuser
+      SPRING_CLIENT_DATASOURCES_BIJOUTERIE_PASSWORD: devpassword
+      SPRING_CLIENT_DATASOURCES_ESN_URL: jdbc:postgresql://poc_db_service:5432/DB_ESN
+      SPRING_CLIENT_DATASOURCES_ESN_USERNAME: devuser
+      SPRING_CLIENT_DATASOURCES_ESN_PASSWORD: devpassword
+      SPRING_CLIENT_DATASOURCES_FRINGUES_URL: jdbc:postgresql://poc_db_service:5432/DB_Fringues
+      SPRING_CLIENT_DATASOURCES_FRINGUES_USERNAME: devuser
+      SPRING_CLIENT_DATASOURCES_FRINGUES_PASSWORD: devpassword
+      SPRING_CLIENT_DATASOURCES_CENTRAL_URL: jdbc:postgresql://poc_db_service:5432/DB_AML_Central
+      SPRING_CLIENT_DATASOURCES_CENTRAL_USERNAME: devuser
+      SPRING_CLIENT_DATASOURCES_CENTRAL_PASSWORD: devpassword
+      SPRING_CLIENT_DATASOURCES_BIJOUTERIE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_CLIENT_DATASOURCES_ESN_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_CLIENT_DATASOURCES_FRINGUES_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_CLIENT_DATASOURCES_CENTRAL_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_PROFILES_ACTIVE: test
+    depends_on:
+      poc_db_service:
+        condition: service_healthy
+    volumes:
+      - ./.m2:/root/.m2
+
+# Définit les volumes Docker utilisés par les services
+volumes:
+  pg_data:
+  .m2:

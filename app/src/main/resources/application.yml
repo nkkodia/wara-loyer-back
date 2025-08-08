@@ -1,0 +1,4 @@
+# application.yml (fichier principal)
+spring:
+  profiles:
+    active: test # Ceci active le profil 'test'

@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/waraloyer_dev
+    username: waraloyer_user
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-1.0.xml
+
+waraloyer:
+  security:
+    jwt:
+      secret: VotreSecretJWTPourLeDeveloppement
+      expiration-ms: 3600000 # 1 heure
+
+twilio:
+  account-sid: VotreTwilioAccountSID
+  auth-token: VotreTwilioAuthToken
+  from-phone-number: VotreNumeroTwilio
