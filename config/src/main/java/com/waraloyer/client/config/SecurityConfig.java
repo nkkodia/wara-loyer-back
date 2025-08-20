@@ -1,6 +1,6 @@
 package com.waraloyer.client.config;// Assurez-vous d'avoir les imports corrects pour Spring Security
-import com.waraloyer.client.security.AuthTokenFilter;
 import com.waraloyer.client.service.UserService;
+import com.waraloyer.client.security.AuthTokenFilter; // Assurez-vous d'avoir cet import
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -9,20 +9,17 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy; // Import de SessionCreationPolicy
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Import du filtre
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    @Autowired
-    private UserService userService;
-
 
     @Autowired
     private AuthTokenFilter authTokenFilter; // Injection du filtre
@@ -31,6 +28,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable) // Désactive la protection CSRF
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Utilise des sessions sans état
                 .authorizeHttpRequests(authorize -> authorize
                         // Autorise l'accès sans authentification pour les URLs d'authentification
                         .requestMatchers("/api/auth/**").permitAll()
@@ -40,8 +38,8 @@ public class SecurityConfig {
                         .requestMatchers("/").permitAll()
                         // Toutes les autres requêtes doivent être authentifiées
                         .anyRequest().authenticated()
-                ).addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class); // Ajout du filtre JWT
-
+                )
+                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class); // Ajout du filtre JWT
 
         return http.build();
     }
