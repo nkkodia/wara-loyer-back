@@ -29,15 +29,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         this.userDetailsService = userDetailsService;
     }
 
+    // Le filtre ne s'exécutera pas pour les requêtes sur ces chemins
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        return request.getRequestURI().startsWith("/api/auth");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
-        if (request.getRequestURI().startsWith("/api/auth")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        // ------------------------------------------
 
         try {
             String jwt = parseJwt(request);
