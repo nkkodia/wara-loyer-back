@@ -22,11 +22,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // On n'injecte plus AuthTokenFilter ici pour éviter le cycle.
-    // Il sera injecté directement dans la chaîne de filtres.
+    private final AuthTokenFilter authTokenFilter;
+    private final UserService userService;
+
+    @Autowired
+    public SecurityConfig(AuthTokenFilter authTokenFilter, UserService userService) {
+        this.authTokenFilter = authTokenFilter;
+        this.userService = userService;
+    }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthTokenFilter authTokenFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -52,10 +58,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
+    public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setUserDetailsService(userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return userService;
     }
 }
