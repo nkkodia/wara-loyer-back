@@ -1,7 +1,7 @@
 package com.waraloyer.client.security;
 
 import com.waraloyer.client.config.JwtUtils;
-import com.waraloyer.client.service.UserService; // Changed from UserDetailsServiceImpl
+import com.waraloyer.client.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,10 +21,10 @@ import java.io.IOException;
 public class AuthTokenFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
-    private final UserService userService; // Changed from UserDetailsServiceImpl
+    private final UserService userService;
 
     @Autowired
-    public AuthTokenFilter(JwtUtils jwtUtils, UserService userService) { // Updated constructor
+    public AuthTokenFilter(JwtUtils jwtUtils, UserService userService) {
         this.jwtUtils = jwtUtils;
         this.userService = userService;
     }

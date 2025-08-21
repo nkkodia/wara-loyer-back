@@ -1,6 +1,7 @@
-package com.waraloyer.client.config;// Assurez-vous d'avoir les imports corrects pour Spring Security
-import com.waraloyer.client.service.UserService;
+package com.waraloyer.client.config;
+
 import com.waraloyer.client.security.AuthTokenFilter;
+import com.waraloyer.client.service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,15 +22,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final AuthTokenFilter authTokenFilter;
-
-    @Autowired
-    public SecurityConfig(AuthTokenFilter authTokenFilter) {
-        this.authTokenFilter = authTokenFilter;
-    }
+    // On n'injecte plus AuthTokenFilter ici pour éviter le cycle.
+    // Il sera injecté directement dans la chaîne de filtres.
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthTokenFilter authTokenFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -38,9 +35,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/alerts/**").permitAll()
                         .requestMatchers("/").permitAll()
                         .anyRequest().authenticated()
-                );
-        // On retire addFilterBefore ici pour éviter un potentiel conflit de filtres.
-        // La logique shouldNotFilter est la bonne approche.
+                )
+                .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
