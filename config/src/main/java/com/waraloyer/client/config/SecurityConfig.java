@@ -22,17 +22,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final AuthTokenFilter authTokenFilter;
     private final UserService userService;
 
     @Autowired
-    public SecurityConfig(AuthTokenFilter authTokenFilter, UserService userService) {
-        this.authTokenFilter = authTokenFilter;
+    public SecurityConfig(UserService userService) {
         this.userService = userService;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthTokenFilter authTokenFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
