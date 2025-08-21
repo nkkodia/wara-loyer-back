@@ -1,7 +1,7 @@
 package com.waraloyer.client.security;
 
 import com.waraloyer.client.config.JwtUtils;
-import com.waraloyer.client.service.UserDetailsServiceImpl;
+import com.waraloyer.client.service.UserService; // Changed from UserDetailsServiceImpl
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,15 +21,14 @@ import java.io.IOException;
 public class AuthTokenFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
-    private final UserDetailsServiceImpl userDetailsService;
+    private final UserService userService; // Changed from UserDetailsServiceImpl
 
     @Autowired
-    public AuthTokenFilter(JwtUtils jwtUtils, UserDetailsServiceImpl userDetailsService) {
+    public AuthTokenFilter(JwtUtils jwtUtils, UserService userService) { // Updated constructor
         this.jwtUtils = jwtUtils;
-        this.userDetailsService = userDetailsService;
+        this.userService = userService;
     }
 
-    // Le filtre ne s'exécutera pas pour les requêtes sur ces chemins
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         return request.getRequestURI().startsWith("/api/auth");
@@ -42,9 +41,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         try {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                String username = jwtUtils.getUserNameFromJwtToken(jwt);
+                String email = jwtUtils.getUserNameFromJwtToken(jwt);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                UserDetails userDetails = userService.loadUserByUsername(email);
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
