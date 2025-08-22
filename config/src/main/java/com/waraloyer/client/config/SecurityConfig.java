@@ -22,13 +22,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // On retire l'injection directe de UserService pour briser le cycle.
-    // private final UserService userService;
+    private final UserService userService;
 
-    // @Autowired
-    // public SecurityConfig(UserService userService) {
-    //     this.userService = userService;
-    // }
+    @Autowired
+    public SecurityConfig(UserService userService) {
+        this.userService = userService;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthTokenFilter authTokenFilter) throws Exception {
@@ -36,9 +35,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/"
+                        ).permitAll()
                         .requestMatchers("/api/alerts/**").permitAll()
-                        .requestMatchers("/").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
@@ -57,17 +61,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
+    public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setUserDetailsService(userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
-    // Le UserDetailsService sera maintenant injecté directement par Spring.
-    // On peut retirer cette méthode car le UserService est déjà un bean.
-    // @Bean
-    // public UserDetailsService userDetailsService() {
-    //     return userService;
-    // }
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return userService;
+    }
 }

@@ -3,7 +3,7 @@ package com.waraloyer.client.controller;
 import com.waraloyer.client.config.JwtUtils;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.AuthService;
-import com.waraloyer.client.service.UserService; // Ajout de l'import de UserService
+import com.waraloyer.client.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,7 +14,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails; // Import de UserDetails
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-    private final UserService userService; // Injection de UserService
+    private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
@@ -58,9 +58,8 @@ public class AuthController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
-        // On ne caste plus directement. On récupère le principal sous forme de UserDetails
+        // On récupère le principal sous forme de UserDetails et on l'utilise pour trouver notre objet User
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        // On utilise l'email pour retrouver l'objet User complet
         User userPrincipal = userService.findUserByEmail(userDetails.getUsername());
 
         if (!authService.isAccessValid(userPrincipal)) {
