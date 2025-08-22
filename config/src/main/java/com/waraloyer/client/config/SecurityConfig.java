@@ -22,12 +22,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final UserService userService;
+    // Suppression de l'injection directe de UserService pour rompre le cycle
+    // private final UserService userService;
 
-    @Autowired
-    public SecurityConfig(UserService userService) {
-        this.userService = userService;
-    }
+    // @Autowired
+    // public SecurityConfig(UserService userService) {
+    //     this.userService = userService;
+    // }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthTokenFilter authTokenFilter) throws Exception {
@@ -61,15 +62,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService());
+        authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return userService;
-    }
+    // Cette méthode n'est plus nécessaire car Spring peut trouver le UserService
+    // directement grâce à son annotation @Service et au fait qu'il implémente UserDetailsService.
+    // @Bean
+    // public UserDetailsService userDetailsService() {
+    //     return userService;
+    // }
 }
