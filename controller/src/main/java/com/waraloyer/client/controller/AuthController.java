@@ -58,8 +58,9 @@ public class AuthController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
-        // On récupère le principal sous forme de UserDetails et on l'utilise pour trouver notre objet User
+        // On récupère le principal sous forme de UserDetails
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        // On utilise l'email pour retrouver l'objet User complet
         User userPrincipal = userService.findUserByEmail(userDetails.getUsername());
 
         if (!authService.isAccessValid(userPrincipal)) {
