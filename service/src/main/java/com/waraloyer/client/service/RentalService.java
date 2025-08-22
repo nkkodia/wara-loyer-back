@@ -1,15 +1,12 @@
 package com.waraloyer.client.service;
 
 import com.waraloyer.client.model.Rental;
-import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.RentalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class RentalService {
@@ -21,41 +18,33 @@ public class RentalService {
         this.rentalRepository = rentalRepository;
     }
 
-    public List<Rental> findByUserId(Long userId) {
-        // Logique pour trouver tous les loyers d'un utilisateur
-        return rentalRepository.findByUserId(userId);
-    }
-
-    public Optional<Rental> findById(String id) {
-        // Logique pour trouver un loyer par son ID
-        return rentalRepository.findById(id);
-    }
-
-    public Rental save(Rental rental, User user) {
-        // Logique pour sauvegarder un nouveau loyer ou mettre à jour un existant
-        if (rental.getId() == null || rental.getId().isEmpty()) {
-            rental.setId(UUID.randomUUID().toString());
-            rental.setUser(user);
-        } else {
-            Optional<Rental> existingRental = rentalRepository.findById(rental.getId());
-            if (existingRental.isPresent() && !existingRental.get().getUser().getId().equals(user.getId())) {
-                throw new IllegalArgumentException("Vous n'êtes pas autorisé à modifier ce loyer.");
-            }
-            rental.setUser(user);
-        }
+    public Rental create(Rental rental) {
         return rentalRepository.save(rental);
     }
 
-    public Rental markAsPaid(String id, Long userId) {
-        // Logique pour marquer un loyer comme payé
-        Optional<Rental> rentalOptional = rentalRepository.findById(id);
-        if (rentalOptional.isPresent() && rentalOptional.get().getUser().getId().equals(userId)) {
-            Rental rental = rentalOptional.get();
-            rental.setStatus("Paid");
-            rental.setPaymentDate(LocalDate.now());
-            return rentalRepository.save(rental);
-        } else {
-            throw new IllegalArgumentException("Loyer non trouvé ou vous n'êtes pas autorisé à le modifier.");
-        }
+    public List<Rental> findAll() {
+        return rentalRepository.findAll();
+    }
+
+    public Optional<Rental> findById(String id) {
+        return rentalRepository.findById(id);
+    }
+
+    public Rental update(String id, Rental rentalDetails) {
+        Rental existingRental = rentalRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + id));
+
+        // Mettez à jour les champs de l'objet existant avec les détails de la requête
+        existingRental.setDueDate(rentalDetails.getDueDate());
+        existingRental.setAmountDue(rentalDetails.getAmountDue());
+        existingRental.setPaymentDate(rentalDetails.getPaymentDate());
+        existingRental.setStatus(rentalDetails.getStatus());
+        existingRental.setComments(rentalDetails.getComments());
+
+        return rentalRepository.save(existingRental);
+    }
+
+    public void delete(String id) {
+        rentalRepository.deleteById(id);
     }
 }

@@ -7,15 +7,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "Utilisateurs", description = "Endpoints pour l'enregistrement des utilisateurs (utilisé par l'admin).")
 @RestController
@@ -37,6 +37,15 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         userService.registerNewUser(user);
         return ResponseEntity.ok("Utilisateur enregistré avec succès !");
+    }
+
+    @Operation(summary = "Liste tous les utilisateurs",
+            description = "Retourne la liste complète de tous les utilisateurs enregistrés.")
+    @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès.")
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> listAllUsers() {
+        List<User> users = userService.findAllUsers();
+        return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
 }

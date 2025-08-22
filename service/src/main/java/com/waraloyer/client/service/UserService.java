@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService { // <-- Ajout de l'interface UserDetailsService
@@ -62,5 +63,9 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
     public User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
+    }
+
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
     }
 }

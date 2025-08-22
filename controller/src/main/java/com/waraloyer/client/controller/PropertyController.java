@@ -1,13 +1,10 @@
 package com.waraloyer.client.controller;
 
 import com.waraloyer.client.model.Property;
-import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.PropertyService;
-import com.waraloyer.client.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,35 +14,45 @@ import java.util.List;
 public class PropertyController {
 
     private final PropertyService propertyService;
-    private final UserService userService;
 
     @Autowired
-    public PropertyController(PropertyService propertyService, UserService userService) {
+    public PropertyController(PropertyService propertyService) {
         this.propertyService = propertyService;
-        this.userService = userService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Property>> getProperties() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = userService.findByUsername(authentication.getName());
-        List<Property> properties = propertyService.findByUserId(currentUser.getId());
-        return ResponseEntity.ok(properties);
-    }
-
+    // CREATE - Créer un nouveau bien
     @PostMapping
-    public ResponseEntity<Property> saveProperty(@RequestBody Property property) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = userService.findByUsername(authentication.getName());
-        Property savedProperty = propertyService.save(property, currentUser);
-        return ResponseEntity.ok(savedProperty);
+    public ResponseEntity<Property> createProperty(@RequestBody Property property) {
+        Property newProperty = propertyService.create(property);
+        return new ResponseEntity<>(newProperty, HttpStatus.CREATED);
     }
 
+    // READ - Lister tous les biens
+    @GetMapping
+    public ResponseEntity<List<Property>> getAllProperties() {
+        List<Property> properties = propertyService.findAll();
+        return new ResponseEntity<>(properties, HttpStatus.OK);
+    }
+
+    // READ - Obtenir un bien par son ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Property> getPropertyById(@PathVariable String id) {
+        return propertyService.findById(id)
+                .map(property -> new ResponseEntity<>(property, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    // UPDATE - Mettre à jour un bien existant
+    @PutMapping("/{id}")
+    public ResponseEntity<Property> updateProperty(@PathVariable String id, @RequestBody Property propertyDetails) {
+        Property updatedProperty = propertyService.update(id, propertyDetails);
+        return new ResponseEntity<>(updatedProperty, HttpStatus.OK);
+    }
+
+    // DELETE - Supprimer un bien par son ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProperty(@PathVariable String id) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = userService.findByUsername(authentication.getName());
-        propertyService.deleteById(id, currentUser.getId());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
+        propertyService.delete(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
