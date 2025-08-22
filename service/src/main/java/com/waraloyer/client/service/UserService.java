@@ -42,6 +42,8 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
     }
 
+
+
     // --- Nouvelle méthode requise par UserDetailsService pour l'authentification ---
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -55,5 +57,10 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
                 user.getPassword(),
                 Collections.emptyList() // Liste d'autorités/rôles vide pour le moment
         );
+    }
+
+    public User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
     }
 }

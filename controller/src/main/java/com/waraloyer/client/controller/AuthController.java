@@ -3,15 +3,18 @@ package com.waraloyer.client.controller;
 import com.waraloyer.client.config.JwtUtils;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.AuthService;
+import com.waraloyer.client.service.UserService; // Ajout de l'import de UserService
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails; // Import de UserDetails
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,12 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService; // Injection de UserService
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
     @Autowired
-    public AuthController(AuthService authService, AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
+    public AuthController(AuthService authService, UserService userService, AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
         this.authService = authService;
+        this.userService = userService;
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
     }
@@ -53,10 +58,13 @@ public class AuthController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
-        User userPrincipal = (User) authentication.getPrincipal();
+        // On ne caste plus directement. On récupère le principal sous forme de UserDetails
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        // On utilise l'email pour retrouver l'objet User complet
+        User userPrincipal = userService.findUserByEmail(userDetails.getUsername());
 
         if (!authService.isAccessValid(userPrincipal)) {
-            return ResponseEntity.status(403).body("Votre abonnement a expiré.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Votre abonnement a expiré.");
         }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
