@@ -26,11 +26,11 @@ public class PropertyService {
         return propertyRepository.findAll();
     }
 
-    public Optional<Property> findById(String id) {
+    public Optional<Property> findById(Long id) {
         return propertyRepository.findById(id);
     }
 
-    public Property update(String id, Property propertyDetails) {
+    public Property update(Long id, Property propertyDetails) {
         Property existingProperty = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bien non trouvé avec l'ID " + id));
 
@@ -46,7 +46,7 @@ public class PropertyService {
         return propertyRepository.save(existingProperty);
     }
 
-    public void delete(String id) {
+    public void delete(Long id) {
         propertyRepository.deleteById(id);
     }
 }

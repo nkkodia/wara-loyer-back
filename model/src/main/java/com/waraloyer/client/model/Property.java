@@ -10,7 +10,8 @@ import java.math.BigDecimal;
 @Data
 public class Property {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // S'assure que l'ID est généré automatiquement
+    private Long id; // <-- Correction : le type est maintenant Long
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

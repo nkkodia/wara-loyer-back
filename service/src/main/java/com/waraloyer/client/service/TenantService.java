@@ -24,13 +24,12 @@ public class TenantService {
         return tenantRepository.findByUserId(userId);
     }
 
-    public Optional<Tenant> findById(String id) {
+    public Optional<Tenant> findById(Long id) {
         return tenantRepository.findById(id);
     }
 
     public Tenant save(Tenant tenant, User user) {
-        if (tenant.getId() == null || tenant.getId().isEmpty()) {
-            tenant.setId(UUID.randomUUID().toString());
+        if (tenant.getId() == null) {
             tenant.setUser(user);
         } else {
             Optional<Tenant> existingTenant = tenantRepository.findById(tenant.getId());
@@ -42,7 +41,7 @@ public class TenantService {
         return tenantRepository.save(tenant);
     }
 
-    public void deleteById(String id, Long userId) {
+    public void deleteById(Long id, Long userId) {
         Optional<Tenant> tenant = tenantRepository.findById(id);
         if (tenant.isPresent() && tenant.get().getUser().getId().equals(userId)) {
             tenantRepository.deleteById(id);

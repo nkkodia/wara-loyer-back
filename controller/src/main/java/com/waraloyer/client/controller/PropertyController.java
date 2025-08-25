@@ -36,7 +36,7 @@ public class PropertyController {
 
     // READ - Obtenir un bien par son ID
     @GetMapping("/{id}")
-    public ResponseEntity<Property> getPropertyById(@PathVariable String id) {
+    public ResponseEntity<Property> getPropertyById(@PathVariable Long id) {
         return propertyService.findById(id)
                 .map(property -> new ResponseEntity<>(property, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -44,14 +44,14 @@ public class PropertyController {
 
     // UPDATE - Mettre à jour un bien existant
     @PutMapping("/{id}")
-    public ResponseEntity<Property> updateProperty(@PathVariable String id, @RequestBody Property propertyDetails) {
+    public ResponseEntity<Property> updateProperty(@PathVariable Long id, @RequestBody Property propertyDetails) {
         Property updatedProperty = propertyService.update(id, propertyDetails);
         return new ResponseEntity<>(updatedProperty, HttpStatus.OK);
     }
 
     // DELETE - Supprimer un bien par son ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProperty(@PathVariable String id) {
+    public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
         propertyService.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

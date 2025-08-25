@@ -8,6 +8,6 @@ import java.util.List;
 
 // Repository pour les biens immobiliers
 @Repository
-public interface PropertyRepository extends JpaRepository<Property, String> {
+public interface PropertyRepository extends JpaRepository<Property, Long> {
     List<Property> findByUserId(Long userId);
 }

@@ -11,7 +11,8 @@ import java.time.LocalDate;
 @Data
 public class Rental {
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // S'assure que l'ID est généré automatiquement
+    private Long id; // <-- Correction : le type est maintenant Long
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

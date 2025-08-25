@@ -43,7 +43,7 @@ public class TenantController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTenant(@PathVariable String id) {
+    public ResponseEntity<Void> deleteTenant(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.findByUsername(authentication.getName());
         tenantService.deleteById(id, currentUser.getId());

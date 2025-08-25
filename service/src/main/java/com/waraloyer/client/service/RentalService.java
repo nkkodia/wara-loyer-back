@@ -30,11 +30,11 @@ public class RentalService {
         return rentalRepository.findAll();
     }
 
-    public Optional<Rental> findById(String id) {
+    public Optional<Rental> findById(Long id) {
         return rentalRepository.findById(id);
     }
 
-    public Rental update(String id, Rental rentalDetails) {
+    public Rental update(Long id, Rental rentalDetails) {
         Rental existingRental = rentalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + id));
 
@@ -48,7 +48,7 @@ public class RentalService {
         return rentalRepository.save(existingRental);
     }
 
-    public void delete(String id) {
+    public void delete(Long id) {
         rentalRepository.deleteById(id);
     }
 
@@ -57,8 +57,7 @@ public class RentalService {
     }
 
     public Rental save(Rental rental, User user) {
-        if (rental.getId() == null || rental.getId().isEmpty()) {
-            rental.setId(UUID.randomUUID().toString());
+        if (rental.getId() == null) {
             rental.setUser(user);
         } else {
             Optional<Rental> existingTenant = rentalRepository.findById(rental.getId());
@@ -77,7 +76,7 @@ public class RentalService {
      * @param userId L'identifiant de l'utilisateur.
      * @return L'objet Rental mis à jour.
      */
-    public Rental markAsPaid(String rentalId, Long userId) {
+    public Rental markAsPaid(Long rentalId, Long userId) {
         Rental rental = rentalRepository.findById(rentalId)
                 .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + rentalId));
 

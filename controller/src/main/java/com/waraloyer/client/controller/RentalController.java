@@ -36,7 +36,7 @@ public class RentalController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Rental> getRentalById(@PathVariable String id) {
+    public ResponseEntity<Rental> getRentalById(@PathVariable Long id) {
         Optional<Rental> rental = rentalService.findById(id);
         return rental.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -51,7 +51,7 @@ public class RentalController {
     }
 
     @PutMapping("/{id}/paid")
-    public ResponseEntity<Rental> markAsPaid(@PathVariable String id) {
+    public ResponseEntity<Rental> markAsPaid(@PathVariable Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.findByUsername(authentication.getName());
         Rental updatedRental = rentalService.markAsPaid(id, currentUser.getId());
