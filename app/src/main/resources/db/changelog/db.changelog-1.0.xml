@@ -9,5 +9,6 @@
     <include file="db/changelog/02-add-foreign-keys.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/03-add-subscription-default.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/04-add-role-tables.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/05-add-financial-columns.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>
