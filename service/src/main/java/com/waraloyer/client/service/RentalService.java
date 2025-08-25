@@ -22,23 +22,55 @@ public class RentalService {
         this.rentalRepository = rentalRepository;
     }
 
-    public Rental create(Rental rental) {
+
+    /**
+     * Crée une nouvelle location en l'associant à l'utilisateur actuel.
+     * @param rental L'objet Rental à créer.
+     * @param user L'utilisateur actuellement authentifié.
+     * @return L'objet Rental créé.
+     */
+    public Rental create(Rental rental, User user) {
+        rental.setUser(user);
         return rentalRepository.save(rental);
     }
 
+    /**
+     * Récupère la liste de toutes les locations.
+     * @return Une liste de toutes les locations.
+     */
     public List<Rental> findAll() {
         return rentalRepository.findAll();
     }
 
+    /**
+     * Récupère toutes les locations pour un utilisateur donné.
+     * @param userId L'ID de l'utilisateur.
+     * @return Une liste de locations appartenant à l'utilisateur.
+     */
+    public List<Rental> findByUserId(Long userId) {
+        return rentalRepository.findByUserId(userId);
+    }
+
+    /**
+     * Récupère une location par son identifiant unique.
+     * @param id L'identifiant de la location.
+     * @return Un Optional contenant la location si elle existe.
+     */
     public Optional<Rental> findById(Long id) {
         return rentalRepository.findById(id);
     }
 
+    /**
+     * Met à jour une location existante.
+     * @param id L'identifiant de la location à mettre à jour.
+     * @param rentalDetails L'objet contenant les détails de la mise à jour.
+     * @return L'objet Rental mis à jour.
+     */
     public Rental update(Long id, Rental rentalDetails) {
         Rental existingRental = rentalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + id));
 
-        // Mettez à jour les champs de l'objet existant avec les détails de la requête
+        // Met à jour les champs de la location existante
         existingRental.setDueDate(rentalDetails.getDueDate());
         existingRental.setAmountDue(rentalDetails.getAmountDue());
         existingRental.setPaymentDate(rentalDetails.getPaymentDate());
@@ -48,25 +80,12 @@ public class RentalService {
         return rentalRepository.save(existingRental);
     }
 
+    /**
+     * Supprime une location par son identifiant.
+     * @param id L'identifiant de la location à supprimer.
+     */
     public void delete(Long id) {
         rentalRepository.deleteById(id);
-    }
-
-    public List<Rental> findByUserId(Long id) {
-        return rentalRepository.findByUserId(id);
-    }
-
-    public Rental save(Rental rental, User user) {
-        if (rental.getId() == null) {
-            rental.setUser(user);
-        } else {
-            Optional<Rental> existingTenant = rentalRepository.findById(rental.getId());
-            if (existingTenant.isPresent() && !existingTenant.get().getUser().getId().equals(user.getId())) {
-                throw new IllegalArgumentException("Vous n'êtes pas autorisé à modifier ce locataire.");
-            }
-            rental.setUser(user);
-        }
-        return rentalRepository.save(rental);
     }
 
     /**
