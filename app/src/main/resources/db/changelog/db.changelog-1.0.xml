@@ -6,4 +6,5 @@
 
     <!-- Fichier de migration principal pour le projet WaraLoyer -->
     <include file="db/changelog/01-create-tables.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/02-add-defaults-to-rental-table.sql" relativeToChangelogFile="false"/>
 </databaseChangeLog>
