@@ -6,9 +6,11 @@ import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.TenantService;
 import com.waraloyer.client.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,27 +28,50 @@ public class TenantController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Tenant>> getTenants() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = userService.findByUsername(authentication.getName());
-        List<Tenant> tenants = tenantService.findByUserId(currentUser.getId());
-        return ResponseEntity.ok(tenants);
-    }
-
     @PostMapping
-    public ResponseEntity<Tenant> saveTenant(@RequestBody Tenant tenant) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = userService.findByUsername(authentication.getName());
-        Tenant savedTenant = tenantService.save(tenant, currentUser);
-        return ResponseEntity.ok(savedTenant);
+    public ResponseEntity<Tenant> createTenant(@RequestBody Tenant tenant, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        Tenant newTenant = tenantService.create(tenant, currentUser);
+        return new ResponseEntity<>(newTenant, HttpStatus.CREATED);
     }
 
+    // READ - Lister tous les locataires pour l'utilisateur authentifié
+    @GetMapping("/my-tenants")
+    public ResponseEntity<List<Tenant>> getMyTenants(Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+        List<Tenant> tenants = tenantService.findByUserId(currentUser.getId());
+        return new ResponseEntity<>(tenants, HttpStatus.OK);
+    }
+
+    // READ - Lister tous les locataires
+    @GetMapping
+    public ResponseEntity<List<Tenant>> getAllTenants() {
+        List<Tenant> tenants = tenantService.findAll();
+        return new ResponseEntity<>(tenants, HttpStatus.OK);
+    }
+
+    // READ - Obtenir un locataire par son ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Tenant> getTenantById(@PathVariable Long id) {
+        return tenantService.findById(id)
+                .map(tenant -> new ResponseEntity<>(tenant, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    // UPDATE - Mettre à jour un locataire existant
+    @PutMapping("/{id}")
+    public ResponseEntity<Tenant> updateTenant(@PathVariable Long id, @RequestBody Tenant tenantDetails) {
+        Tenant updatedTenant = tenantService.update(id, tenantDetails);
+        return new ResponseEntity<>(updatedTenant, HttpStatus.OK);
+    }
+
+    // DELETE - Supprimer un locataire par son ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTenant(@PathVariable Long id) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = userService.findByUsername(authentication.getName());
-        tenantService.deleteById(id, currentUser.getId());
-        return ResponseEntity.noContent().build();
+        tenantService.delete(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class TenantService {
@@ -28,16 +27,14 @@ public class TenantService {
         return tenantRepository.findById(id);
     }
 
-    public Tenant save(Tenant tenant, User user) {
-        if (tenant.getId() == null) {
-            tenant.setUser(user);
-        } else {
-            Optional<Tenant> existingTenant = tenantRepository.findById(tenant.getId());
-            if (existingTenant.isPresent() && !existingTenant.get().getUser().getId().equals(user.getId())) {
-                throw new IllegalArgumentException("Vous n'êtes pas autorisé à modifier ce locataire.");
-            }
-            tenant.setUser(user);
-        }
+    /**
+     * Crée un nouveau locataire l'associant à l'utilisateur actuel.
+     * @param tenant L'objet Property à créer.
+     * @param user L'utilisateur actuellement authentifié.
+     * @return L'objet Tenant créé.
+     */
+    public Tenant create(Tenant tenant, User user) {
+        tenant.setUser(user);
         return tenantRepository.save(tenant);
     }
 
@@ -48,5 +45,27 @@ public class TenantService {
         } else {
             throw new IllegalArgumentException("Locataire non trouvé ou vous n'êtes pas autorisé à le supprimer.");
         }
+    }
+
+    public List<Tenant> findAll() {
+        return tenantRepository.findAll();
+    }
+
+    public Tenant update(Long id, Tenant tenantDetails) {
+        Tenant existingTenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Bien non trouvé avec l'ID " + id));
+
+        // Mettez à jour les champs de l'objet existant
+        existingTenant.setFirstName(tenantDetails.getFirstName());
+        existingTenant.setLastName(tenantDetails.getLastName());
+        existingTenant.setEmail(tenantDetails.getEmail());
+        existingTenant.setPhoneNumber(tenantDetails.getPhoneNumber());
+        existingTenant.setRentStartDate(tenantDetails.getRentStartDate());
+
+        return tenantRepository.save(existingTenant);
+    }
+
+    public void delete(Long id) {
+        tenantRepository.deleteById(id);
     }
 }
