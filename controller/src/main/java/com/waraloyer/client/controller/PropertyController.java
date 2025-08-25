@@ -51,7 +51,7 @@ public class PropertyController {
 
     // DELETE - Supprimer un bien par son ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProperty(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProperty(@PathVariable String id) {
         propertyService.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
