@@ -1,27 +1,37 @@
 package com.waraloyer.client.service;
 
+import com.waraloyer.client.model.Role;
 import com.waraloyer.client.model.User;
+import com.waraloyer.client.model.enums.ERole;
 import com.waraloyer.client.repository.UserRepository;
+import com.waraloyer.client.repository.RoleRepository;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService implements UserDetailsService { // <-- Ajout de l'interface UserDetailsService
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -34,10 +44,13 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
+
+        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                .orElseThrow(() -> new RuntimeException("Erreur: Le rôle USER n'a pas été trouvé."));
+        user.getRoles().add(userRole);
         userRepository.save(user);
     }
 
-    // --- Cette méthode n'est plus utilisée pour la recherche de connexion, mais peut rester pour d'autres usages ---
     public User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé."));
@@ -45,14 +58,15 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
 
 
 
-    // --- Nouvelle méthode requise par UserDetailsService pour l'authentification ---
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         // Recherche l'utilisateur par email pour la connexion
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec l'email : " + email));
 
-        // Retourne un objet UserDetails de Spring Security
+        Set<GrantedAuthority> authorities = user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName().name()))
+                .collect(Collectors.toSet());
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),

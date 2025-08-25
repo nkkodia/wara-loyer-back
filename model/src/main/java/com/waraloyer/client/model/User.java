@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 // Entité pour les utilisateurs (propriétaires)
 @Entity
@@ -26,6 +28,13 @@ public class User implements UserDetails {
     private String lastName;
     private LocalDateTime createdAt;
     private LocalDate subscriptionEndDate; // <-- NOUVEAU
+
+
+    @ManyToMany(fetch = FetchType.EAGER) // Charge les rôles avec l'utilisateur
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
