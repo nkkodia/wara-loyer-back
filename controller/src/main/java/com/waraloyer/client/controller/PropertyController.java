@@ -1,10 +1,14 @@
 package com.waraloyer.client.controller;
 
 import com.waraloyer.client.model.Property;
+import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.PropertyService;
+import com.waraloyer.client.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,16 +18,21 @@ import java.util.List;
 public class PropertyController {
 
     private final PropertyService propertyService;
+    private final UserService userService;
 
     @Autowired
-    public PropertyController(PropertyService propertyService) {
+    public PropertyController(PropertyService propertyService, UserService userService) {
         this.propertyService = propertyService;
+        this.userService = userService;
     }
 
     // CREATE - Créer un nouveau bien
     @PostMapping
-    public ResponseEntity<Property> createProperty(@RequestBody Property property) {
-        Property newProperty = propertyService.create(property);
+    public ResponseEntity<Property> createProperty(@RequestBody Property property, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        Property newProperty = propertyService.create(property, currentUser);
         return new ResponseEntity<>(newProperty, HttpStatus.CREATED);
     }
 

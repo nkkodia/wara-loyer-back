@@ -1,6 +1,7 @@
 package com.waraloyer.client.service;
 
 import com.waraloyer.client.model.Property;
+import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,14 @@ public class PropertyService {
         this.propertyRepository = propertyRepository;
     }
 
-    public Property create(Property property) {
+    /**
+     * Crée un nouveau bien en l'associant à l'utilisateur actuel.
+     * @param property L'objet Property à créer.
+     * @param user L'utilisateur actuellement authentifié.
+     * @return L'objet Property créé.
+     */
+    public Property create(Property property, User user) {
+        property.setUser(user);
         return propertyRepository.save(property);
     }
 
@@ -34,7 +42,7 @@ public class PropertyService {
         Property existingProperty = propertyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bien non trouvé avec l'ID " + id));
 
-        // Mettez à jour les champs de l'objet existant avec les détails de la requête
+        // Mettez à jour les champs de l'objet existant
         existingProperty.setName(propertyDetails.getName());
         existingProperty.setAddress(propertyDetails.getAddress());
         existingProperty.setType(propertyDetails.getType());
