@@ -60,19 +60,5 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
-
-    // Cette méthode n'est plus nécessaire car Spring peut trouver le UserService
-    // directement grâce à son annotation @Service et au fait qu'il implémente UserDetailsService.
-    // @Bean
-    // public UserDetailsService userDetailsService() {
-    //     return userService;
-    // }
+    
 }
