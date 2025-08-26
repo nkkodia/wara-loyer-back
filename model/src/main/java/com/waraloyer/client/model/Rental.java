@@ -35,12 +35,12 @@ public class Rental {
     private String comments;
 
     @Column(columnDefinition = "boolean default false")
-    private boolean isReminderSent = false; // Initialisation du champ
+    private boolean isReminderSent = false;
 
     private LocalDate lastReminderSentDate;
 
     @Column(columnDefinition = "boolean default false")
-    private boolean isRelanceSent = false; // Initialisation du champ
+    private boolean isRelanceSent = false;
 
     private LocalDate lastRelanceSentDate;
     private BigDecimal monthlyCosts;

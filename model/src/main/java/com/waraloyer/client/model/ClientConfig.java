@@ -1,21 +1,25 @@
 package com.waraloyer.client.model;
 
-
-// Entité pour la configuration client
-
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "client_config")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ClientConfig {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @OneToOne // Un utilisateur a une seule configuration
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+
     private String ownerEmail;
     private String smsReminderMessage;
     private String smsRelanceMessage;
@@ -25,4 +29,8 @@ public class ClientConfig {
     private String ribDetails;
     private String mobileMoneyLink;
     private String contactPersonDetails;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 }

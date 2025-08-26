@@ -1,6 +1,5 @@
 package com.waraloyer.client.controller;
 
-
 import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.RentalService;
@@ -9,13 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
-import java.util.Optional;
 
+@Tag(name = "Locations", description = "Endpoints pour la gestion des locations.")
 @RestController
 @RequestMapping("/api/rentals")
 public class RentalController {
@@ -29,7 +30,9 @@ public class RentalController {
         this.userService = userService;
     }
 
-    // CREATE - Crée une nouvelle location
+    @Operation(summary = "Crée une nouvelle location",
+            description = "Crée une nouvelle location pour l'utilisateur authentifié.")
+    @ApiResponse(responseCode = "201", description = "Location créée avec succès.")
     @PostMapping
     public ResponseEntity<Rental> createRental(@RequestBody Rental rental, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -39,7 +42,9 @@ public class RentalController {
         return new ResponseEntity<>(newRental, HttpStatus.CREATED);
     }
 
-    // READ - Liste les locations de l'utilisateur authentifié
+    @Operation(summary = "Lister les locations de l'utilisateur",
+            description = "Retourne la liste des locations gérées par l'utilisateur authentifié.")
+    @ApiResponse(responseCode = "200", description = "Liste des locations récupérée avec succès.")
     @GetMapping("/my-rentals")
     public ResponseEntity<List<Rental>> getMyRentals(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -48,7 +53,10 @@ public class RentalController {
         return new ResponseEntity<>(rentals, HttpStatus.OK);
     }
 
-    // READ - Obtient une location par son ID
+    @Operation(summary = "Obtenir une location par ID",
+            description = "Retourne une location spécifique par son ID.")
+    @ApiResponse(responseCode = "200", description = "Location trouvée.")
+    @ApiResponse(responseCode = "404", description = "Location non trouvée.")
     @GetMapping("/{id}")
     public ResponseEntity<Rental> getRentalById(@PathVariable Long id) {
         return rentalService.findById(id)
@@ -56,14 +64,21 @@ public class RentalController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    // UPDATE - Met à jour une location existante
+    @Operation(summary = "Mettre à jour une location",
+            description = "Met à jour une location existante par son ID.")
+    @ApiResponse(responseCode = "200", description = "Location mise à jour avec succès.")
+    @ApiResponse(responseCode = "404", description = "Location non trouvée.")
     @PutMapping("/{id}")
     public ResponseEntity<Rental> updateRental(@PathVariable Long id, @RequestBody Rental rentalDetails) {
         Rental updatedRental = rentalService.update(id, rentalDetails);
         return new ResponseEntity<>(updatedRental, HttpStatus.OK);
     }
 
-    // UPDATE - Marque une location comme payée
+    @Operation(summary = "Marquer une location comme payée",
+            description = "Met à jour le statut d'une location en 'PAYÉ' pour l'utilisateur authentifié.")
+    @ApiResponse(responseCode = "200", description = "Location marquée comme payée avec succès.")
+    @ApiResponse(responseCode = "403", description = "Accès non autorisé.")
+    @ApiResponse(responseCode = "404", description = "Location non trouvée.")
     @PutMapping("/mark-paid/{id}")
     public ResponseEntity<Rental> markRentalAsPaid(@PathVariable Long id, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -73,7 +88,10 @@ public class RentalController {
         return new ResponseEntity<>(updatedRental, HttpStatus.OK);
     }
 
-    // DELETE - Supprime une location par son ID
+    @Operation(summary = "Supprimer une location",
+            description = "Supprime une location par son ID.")
+    @ApiResponse(responseCode = "204", description = "Location supprimée avec succès.")
+    @ApiResponse(responseCode = "404", description = "Location non trouvée.")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRental(@PathVariable Long id) {
         rentalService.delete(id);

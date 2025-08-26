@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface SmsLogRepository extends JpaRepository<SmsLog, Long> {
     List<SmsLog> findByUserIdAndRentalId(Long userId, Long rentalId);
+
+    List<SmsLog> findByUserId(Long userId);
 }

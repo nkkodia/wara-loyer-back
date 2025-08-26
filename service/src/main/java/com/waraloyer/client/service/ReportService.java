@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,5 +58,28 @@ public class ReportService {
         report.put("pendingRentalsCount", pendingRentals);
 
         return report;
+    }
+
+    /**
+     * Ajoute des coûts mensuels à une location et met à jour les données financières.
+     * @param rentalId L'ID de la location.
+     * @param userId L'ID de l'utilisateur.
+     * @param monthlyCosts Les coûts mensuels à ajouter.
+     * @return Le rapport financier mis à jour.
+     */
+    public Map<String, Object> addMonthlyCosts(Long rentalId, Long userId, BigDecimal monthlyCosts) {
+        Rental rental = rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + rentalId));
+
+        if (!rental.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Accès non autorisé.");
+        }
+
+        // Met à jour les coûts mensuels et sauvegarde
+        rental.setMonthlyCosts(monthlyCosts);
+        rentalRepository.save(rental);
+
+        // Ré-génère et retourne le rapport mis à jour
+        return getFinancialOverview(userId);
     }
 }
