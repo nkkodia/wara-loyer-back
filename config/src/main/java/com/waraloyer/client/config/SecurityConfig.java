@@ -75,6 +75,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of("http://localhost:4200", "https://waraloyer.com"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true); // Autorise les en-têtes de type 'credentials' comme les cookies ou le header Authorization
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
