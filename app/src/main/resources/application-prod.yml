@@ -12,6 +12,9 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-1.0.xml
+logging:
+  level:
+    org.springframework.security: DEBUG
 
 waraloyer:
   security:
