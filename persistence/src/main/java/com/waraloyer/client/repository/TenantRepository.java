@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface TenantRepository extends JpaRepository<Tenant, Long> {
     List<Tenant> findByUserId(Long userId);
+
+    Long countByUserId(Long id);
 }

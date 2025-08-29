@@ -6,6 +6,7 @@ import com.waraloyer.client.repository.ClientConfigRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,5 +26,8 @@ public class ClientConfigService {
     public ClientConfig save(ClientConfig config, User user) {
         config.setUser(user);
         return clientConfigRepository.save(config);
+    }
+    public List<ClientConfig> findAll() {
+        return clientConfigRepository.findAll();
     }
 }

@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface PropertyRepository extends JpaRepository<Property, Long> {
     List<Property> findByUserId(Long userId);
+
+    Long countByUserId(Long id);
 }

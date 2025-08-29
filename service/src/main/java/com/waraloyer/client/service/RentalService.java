@@ -1,14 +1,17 @@
 package com.waraloyer.client.service;
 
 import com.waraloyer.client.model.Rental;
+import com.waraloyer.client.model.SmsLog;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.RentalRepository;
+import com.waraloyer.client.repository.SmsLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,10 +21,12 @@ public class RentalService {
     private static final BigDecimal TAX_RATE = new BigDecimal("0.12");
 
     private final RentalRepository rentalRepository;
+    private final SmsLogRepository smsLogRepository;
 
     @Autowired
-    public RentalService(RentalRepository rentalRepository) {
+    public RentalService(RentalRepository rentalRepository, SmsLogRepository smsLogRepository) {
         this.rentalRepository = rentalRepository;
+        this.smsLogRepository = smsLogRepository;
     }
 
     /**
@@ -100,6 +105,62 @@ public class RentalService {
         BigDecimal taxes = taxBase.multiply(TAX_RATE).setScale(2, RoundingMode.HALF_UP);
         rental.setTaxes(taxes);
 
+        return rentalRepository.save(rental);
+    }
+
+    /**
+     * Envoie un SMS de rappel de loyer.
+     * @param rentalId L'ID de la location.
+     * @param message Le message à envoyer.
+     * @return La location mise à jour.
+     */
+    public Rental sendReminderSms(Long rentalId, String message) {
+        Rental rental = rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + rentalId));
+
+        System.out.println("Envoi d'un SMS de rappel pour la location " + rental.getId());
+
+        SmsLog log = new SmsLog();
+        log.setType("RAPPEL");
+        log.setMessage(message);
+        log.setSentDate(LocalDateTime.now());
+        log.setStatus("SENT");
+        log.setUser(rental.getUser());
+        log.setRental(rental);
+        log.setLocataire(rental.getTenant());
+        log.setProperty(rental.getProperty());
+        smsLogRepository.save(log);
+
+        rental.setReminderSent(true);
+        rental.setLastReminderSentDate(LocalDate.now());
+        return rentalRepository.save(rental);
+    }
+
+    /**
+     * Envoie un SMS de relance pour loyer en retard.
+     * @param rentalId L'ID de la location.
+     * @param message Le message à envoyer.
+     * @return La location mise à jour.
+     */
+    public Rental sendRelanceSms(Long rentalId, String message) {
+        Rental rental = rentalRepository.findById(rentalId)
+                .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + rentalId));
+
+        System.out.println("Envoi d'un SMS de relance pour la location " + rental.getId());
+
+        SmsLog log = new SmsLog();
+        log.setType("RELANCE");
+        log.setMessage(message);
+        log.setSentDate(LocalDateTime.now());
+        log.setStatus("SENT");
+        log.setUser(rental.getUser());
+        log.setRental(rental);
+        log.setLocataire(rental.getTenant());
+        log.setProperty(rental.getProperty());
+        smsLogRepository.save(log);
+
+        rental.setRelanceSent(true);
+        rental.setLastRelanceSentDate(LocalDate.now());
         return rentalRepository.save(rental);
     }
 }

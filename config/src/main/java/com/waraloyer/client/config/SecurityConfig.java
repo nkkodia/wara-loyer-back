@@ -48,8 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/properties/**", "/api/rentals/**", "/api/tenants/**", "/api/config/**", "/api/reports/**", "/api/sms/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
+
                 .addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
