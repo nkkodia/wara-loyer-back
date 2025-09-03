@@ -28,6 +28,18 @@ public class ClientConfigController {
         this.userService = userService;
     }
 
+    @Operation(summary = "Créer ou mettre à jour la configuration",
+            description = "Crée ou met à jour la configuration pour l'utilisateur authentifié.")
+    @ApiResponse(responseCode = "200", description = "Configuration sauvegardée avec succès.")
+    @PostMapping
+    public ResponseEntity<ClientConfig> saveConfig(@RequestBody ClientConfig config, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        ClientConfig savedConfig = configService.save(config, currentUser);
+        return new ResponseEntity<>(savedConfig, HttpStatus.OK);
+    }
+
     @Operation(summary = "Obtenir la configuration de l'utilisateur",
             description = "Retourne la configuration actuelle de l'utilisateur authentifié.")
     @ApiResponse(responseCode = "200", description = "Configuration récupérée avec succès.")
@@ -41,15 +53,18 @@ public class ClientConfigController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @Operation(summary = "Créer ou mettre à jour la configuration",
-            description = "Crée ou met à jour la configuration pour l'utilisateur authentifié.")
-    @ApiResponse(responseCode = "200", description = "Configuration sauvegardée avec succès.")
-    @PostMapping
-    public ResponseEntity<ClientConfig> saveConfig(@RequestBody ClientConfig config, Authentication authentication) {
+    @Operation(summary = "Mettre à jour la configuration",
+            description = "Met à jour la configuration de l'utilisateur authentifié.")
+    @ApiResponse(responseCode = "200", description = "Configuration mise à jour avec succès.")
+    @ApiResponse(responseCode = "404", description = "Configuration non trouvée.")
+    @PutMapping
+    public ResponseEntity<ClientConfig> updateConfig(@RequestBody ClientConfig config, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        ClientConfig savedConfig = configService.save(config, currentUser);
-        return new ResponseEntity<>(savedConfig, HttpStatus.OK);
+        config.setUser(currentUser);
+
+        ClientConfig updatedConfig = configService.save(config, currentUser);
+        return new ResponseEntity<>(updatedConfig, HttpStatus.OK);
     }
 }

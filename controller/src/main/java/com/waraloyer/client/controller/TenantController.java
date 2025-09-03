@@ -5,6 +5,8 @@ import com.waraloyer.client.model.Tenant;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.TenantService;
 import com.waraloyer.client.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -62,9 +64,18 @@ public class TenantController {
     }
 
     // UPDATE - Mettre à jour un locataire existant
+    @Operation(summary = "Met à jour un locataire existant",
+            description = "Met à jour un locataire par son ID et l'associe à un bien si nécessaire.")
+    @ApiResponse(responseCode = "200", description = "Locataire mis à jour avec succès.")
+    @ApiResponse(responseCode = "404", description = "Locataire non trouvé.")
     @PutMapping("/{id}")
-    public ResponseEntity<Tenant> updateTenant(@PathVariable Long id, @RequestBody Tenant tenantDetails) {
-        Tenant updatedTenant = tenantService.update(id, tenantDetails);
+    public ResponseEntity<Tenant> updateTenant(@PathVariable Long id, @RequestBody Tenant tenantDetails, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        // La logique d'autorisation devrait être dans le service
+        Tenant updatedTenant = tenantService.updateTenant(id, tenantDetails, currentUser);
+
         return new ResponseEntity<>(updatedTenant, HttpStatus.OK);
     }
 

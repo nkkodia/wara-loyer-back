@@ -3,6 +3,7 @@ package com.waraloyer.client.service;
 import com.waraloyer.client.model.ClientConfig;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.ClientConfigRepository;
+import io.micrometer.observation.ObservationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,4 +31,5 @@ public class ClientConfigService {
     public List<ClientConfig> findAll() {
         return clientConfigRepository.findAll();
     }
+
 }
