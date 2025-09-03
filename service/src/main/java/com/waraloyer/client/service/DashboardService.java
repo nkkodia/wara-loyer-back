@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Service
 public class DashboardService {
@@ -28,6 +30,8 @@ public class DashboardService {
     }
 
     public DashboardSummary getSummaryForUser(User user) {
+
+
         // Compter les propriétés et les locataires de l'utilisateur
         Long totalProperties = propertyRepository.countByUserId(user.getId());
         Long totalTenants = tenantRepository.countByUserId(user.getId());
@@ -39,10 +43,14 @@ public class DashboardService {
         // Calculer le total des loyers pour le mois en cours
         LocalDate startDateOfMonth = LocalDate.now().withDayOfMonth(1);
         LocalDate endDateOfMonth = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
-        BigDecimal totalRentalsAmount = rentalRepository.sumAmountDueByUserIdAndDueDateBetween(user.getId(), startDateOfMonth, endDateOfMonth);
 
-        // Compter les SMS envoyés ce mois-ci
-        Long smsSentInMonth = smsLogRepository.countByUserIdAndSentDateBetween(user.getId(), startDateOfMonth, endDateOfMonth);
+        LocalDateTime startDateTime = startDateOfMonth.atStartOfDay(); // Ajoute minuit (00:00:00)
+        LocalDateTime endDateTime = endDateOfMonth.atTime(LocalTime.MAX); // Ajoute la fin de journée (23:59:59.999999999)
+
+        BigDecimal totalRentalsAmount = rentalRepository.sumAmountDueByUserIdAndDueDateBetween(user.getId(), startDateTime, endDateTime);
+        Long smsSentInMonth = smsLogRepository.countByUserIdAndSentDateBetween(user.getId(), startDateTime, endDateTime);
+
+
 
         // Créer l'objet de résumé et le retourner
         return new DashboardSummary(
