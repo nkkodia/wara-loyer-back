@@ -3,6 +3,7 @@ package com.waraloyer.client.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,7 +27,7 @@ public class SmsLog {
     private Property property;
     private String type;
     private String message;
-    private LocalDateTime sentDate;
+    private LocalDate sentDate;
     private String status;
     private String toPhoneNumber;
 }

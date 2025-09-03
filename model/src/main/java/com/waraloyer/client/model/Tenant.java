@@ -16,7 +16,7 @@ public class Tenant {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
-    @JsonIgnore // Important: Avoid circular references
+    @JsonIgnore
     private User user;
 
     private String firstName;

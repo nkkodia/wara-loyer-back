@@ -123,7 +123,7 @@ public class RentalService {
         SmsLog log = new SmsLog();
         log.setType("RAPPEL");
         log.setMessage(message);
-        log.setSentDate(LocalDateTime.now());
+        log.setSentDate(LocalDate.now());
         log.setStatus("SENT");
         log.setUser(rental.getUser());
         log.setRental(rental);
@@ -151,7 +151,7 @@ public class RentalService {
         SmsLog log = new SmsLog();
         log.setType("RELANCE");
         log.setMessage(message);
-        log.setSentDate(LocalDateTime.now());
+        log.setSentDate(LocalDate.now());
         log.setStatus("SENT");
         log.setUser(rental.getUser());
         log.setRental(rental);

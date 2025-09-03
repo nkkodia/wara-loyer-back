@@ -1,5 +1,6 @@
 package com.waraloyer.client.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,7 +31,8 @@ public class ClientConfig {
     private String mobileMoneyLink;
     private String contactPersonDetails;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JsonIgnore // <-- Ignore le champ lors de la sérialisation
     private User user;
 }
