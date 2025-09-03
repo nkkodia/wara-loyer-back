@@ -41,12 +41,10 @@ public class DashboardService {
         // Calculer le total des loyers pour le mois en cours
         LocalDate startDateOfMonth = LocalDate.now().withDayOfMonth(1);
         LocalDate endDateOfMonth = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
+;
 
-        LocalDateTime startDateTime = startDateOfMonth.atStartOfDay();
-        LocalDateTime endDateTime = endDateOfMonth.atTime(LocalTime.MAX);
-
-        BigDecimal totalRentalsAmount = rentalRepository.sumAmountDueByUserIdAndDueDateBetween(user.getId(), startDateTime, endDateTime);
-        Long smsSentInMonth = smsLogRepository.countByUserIdAndSentDateBetween(user.getId(), startDateTime, endDateTime);
+        BigDecimal totalRentalsAmount = rentalRepository.sumAmountDueByUserIdAndDueDateBetween(user.getId(), startDateOfMonth, endDateOfMonth);
+        Long smsSentInMonth = smsLogRepository.countByUserIdAndSentDateBetween(user.getId(), startDateOfMonth, endDateOfMonth);
 
         // Créer l'objet de résumé et le retourner
         return new DashboardSummary(

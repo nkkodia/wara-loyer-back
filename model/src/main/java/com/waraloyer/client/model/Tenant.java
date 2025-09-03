@@ -34,6 +34,11 @@ public class Tenant {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long propertyId;
 
+    // Le setter est nécessaire pour que Jackson puisse mapper le JSON
+    public void setPropertyId(Long propertyId) {
+        this.propertyId = propertyId;
+    }
+
     // Getter pour le champ transitoire
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public Long getPropertyId() {

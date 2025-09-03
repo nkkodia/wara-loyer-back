@@ -77,9 +77,12 @@ public class TenantService {
                     if (tenantDetails.getPropertyId() != null) {
                         Property property = propertyRepository.findById(tenantDetails.getPropertyId())
                                 .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
+                        if (!property.getUser().getId().equals(currentUser.getId())) {
+                            throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
+                        }
                         tenant.setProperty(property);
                     } else {
-                        tenant.setProperty(null); // Dissocier le locataire
+                        tenant.setProperty(null); // Dissocier le locataire du bien
                     }
 
                     return tenantRepository.save(tenant);
