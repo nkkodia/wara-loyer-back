@@ -73,7 +73,6 @@ public class TenantController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        // La logique d'autorisation devrait être dans le service
         Tenant updatedTenant = tenantService.updateTenant(id, tenantDetails, currentUser);
 
         return new ResponseEntity<>(updatedTenant, HttpStatus.OK);
