@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class SmsLogService {
             smsLog.setToPhoneNumber(to); // Ajout de ce champ, assurez-vous qu'il existe dans le modèle SmsLog
             smsLog.setMessage(messageBody);
             smsLog.setType(type);
-            smsLog.setSentDate(LocalDateTime.now());
+            smsLog.setSentDate(LocalDate.now());
             smsLog.setStatus("SENT");
             smsLogRepository.save(smsLog);
             logger.info("SMS de type '{}' envoyé avec succès au numéro {} pour l'utilisateur {}", type, to, user.getEmail());
@@ -72,7 +73,7 @@ public class SmsLogService {
             smsLog.setToPhoneNumber(to); // Ajout de ce champ
             smsLog.setMessage(messageBody);
             smsLog.setType(type);
-            smsLog.setSentDate(LocalDateTime.now());
+            smsLog.setSentDate(LocalDate.now());
             smsLog.setStatus("FAILED");
             smsLogRepository.save(smsLog);
         }

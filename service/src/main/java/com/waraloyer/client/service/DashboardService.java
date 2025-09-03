@@ -34,8 +34,8 @@ public class DashboardService {
         Long totalTenants = tenantRepository.countByUserId(user.getId());
 
         // Calculer les loyers impayés et les montants
-        Long totalUnpaidRentals = rentalRepository.countByUserIdAndStatus(user.getId(), "IMPAYÉ");
-        BigDecimal totalUnpaidAmount = rentalRepository.sumAmountDueByUserIdAndStatus(user.getId(), "IMPAYÉ");
+        Long totalUnpaidRentals = rentalRepository.countByUserIdAndStatus(user.getId(), "IMPAYE");
+        BigDecimal totalUnpaidAmount = rentalRepository.sumAmountDueByUserIdAndStatus(user.getId(), "IMPAYE");
 
         // Calculer le total des loyers pour le mois en cours
         LocalDate startDateOfMonth = LocalDate.now().withDayOfMonth(1);
