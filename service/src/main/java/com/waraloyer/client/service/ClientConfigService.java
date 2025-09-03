@@ -32,4 +32,26 @@ public class ClientConfigService {
         return clientConfigRepository.findAll();
     }
 
+    public ClientConfig getOrCreate(User user) {
+        // Vérifier si une configuration existe déjà pour cet utilisateur
+        Optional<ClientConfig> existingConfig = clientConfigRepository.findByUserId(user.getId());
+
+        // Si une configuration existe, la retourner
+        if (existingConfig.isPresent()) {
+            return existingConfig.get();
+        } else {
+            // Sinon, créer une nouvelle configuration par défaut
+            ClientConfig newConfig = new ClientConfig();
+            newConfig.setUser(user);
+            // Initialisez les champs par défaut ici
+            newConfig.setSmsReminderMessage("Bonjour, {LOCATAIRE}. Nous vous rappelons que votre loyer de {MONTANT} F CFA pour le bien situé à {ADRESSE_BIEN} est dû le {DATE_ECHEANCE}. Merci de votre paiement !");
+            newConfig.setSmsRelanceMessage("Bonjour, {LOCATAIRE}. Nous vous rappelons que votre loyer de {MONTANT} F CFA pour le bien situé à {ADRESSE_BIEN} est en retard. Merci de régulariser votre situation.");
+            newConfig.setOwnerEmail(user.getEmail());
+            newConfig.setDefaultPaymentMethod("Contact"); // Valeur par défaut
+            // ... initialisez les autres champs
+
+            return clientConfigRepository.save(newConfig);
+        }
+    }
+
 }

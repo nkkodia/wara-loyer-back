@@ -47,10 +47,8 @@ public class ClientConfigController {
     public ResponseEntity<ClientConfig> getConfig(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
-
-        return configService.getByUserId(currentUser.getId())
-                .map(config -> new ResponseEntity<>(config, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        ClientConfig config = configService.getOrCreate(currentUser);
+        return new ResponseEntity<>(config, HttpStatus.OK);
     }
 
     @Operation(summary = "Mettre à jour la configuration",

@@ -30,8 +30,6 @@ public class DashboardService {
     }
 
     public DashboardSummary getSummaryForUser(User user) {
-
-
         // Compter les propriétés et les locataires de l'utilisateur
         Long totalProperties = propertyRepository.countByUserId(user.getId());
         Long totalTenants = tenantRepository.countByUserId(user.getId());
@@ -44,13 +42,11 @@ public class DashboardService {
         LocalDate startDateOfMonth = LocalDate.now().withDayOfMonth(1);
         LocalDate endDateOfMonth = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());
 
-        LocalDateTime startDateTime = startDateOfMonth.atStartOfDay(); // Ajoute minuit (00:00:00)
-        LocalDateTime endDateTime = endDateOfMonth.atTime(LocalTime.MAX); // Ajoute la fin de journée (23:59:59.999999999)
+        LocalDateTime startDateTime = startDateOfMonth.atStartOfDay();
+        LocalDateTime endDateTime = endDateOfMonth.atTime(LocalTime.MAX);
 
         BigDecimal totalRentalsAmount = rentalRepository.sumAmountDueByUserIdAndDueDateBetween(user.getId(), startDateTime, endDateTime);
         Long smsSentInMonth = smsLogRepository.countByUserIdAndSentDateBetween(user.getId(), startDateTime, endDateTime);
-
-
 
         // Créer l'objet de résumé et le retourner
         return new DashboardSummary(

@@ -48,14 +48,12 @@ public class TenantController {
         return new ResponseEntity<>(tenants, HttpStatus.OK);
     }
 
-    // READ - Lister tous les locataires
     @GetMapping
     public ResponseEntity<List<Tenant>> getAllTenants() {
         List<Tenant> tenants = tenantService.findAll();
         return new ResponseEntity<>(tenants, HttpStatus.OK);
     }
 
-    // READ - Obtenir un locataire par son ID
     @GetMapping("/{id}")
     public ResponseEntity<Tenant> getTenantById(@PathVariable Long id) {
         return tenantService.findById(id)
@@ -63,7 +61,6 @@ public class TenantController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    // UPDATE - Mettre à jour un locataire existant
     @Operation(summary = "Met à jour un locataire existant",
             description = "Met à jour un locataire par son ID et l'associe à un bien si nécessaire.")
     @ApiResponse(responseCode = "200", description = "Locataire mis à jour avec succès.")
@@ -78,10 +75,12 @@ public class TenantController {
         return new ResponseEntity<>(updatedTenant, HttpStatus.OK);
     }
 
-    // DELETE - Supprimer un locataire par son ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTenant(@PathVariable Long id) {
-        tenantService.delete(id);
+    public ResponseEntity<Void> deleteTenant(@PathVariable Long id, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        tenantService.delete(id, currentUser);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
