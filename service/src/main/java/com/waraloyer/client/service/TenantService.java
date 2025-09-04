@@ -61,28 +61,26 @@ public class TenantService {
     public Tenant updateTenant(Long id, Tenant tenantDetails, User currentUser) {
         return tenantRepository.findById(id)
                 .map(tenant -> {
-                    // Vérification des autorisations
                     if (!tenant.getUser().getId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le locataire n'appartient pas à cet utilisateur.");
                     }
 
-                    // Mettre à jour les champs
                     tenant.setFirstName(tenantDetails.getFirstName());
                     tenant.setLastName(tenantDetails.getLastName());
                     tenant.setEmail(tenantDetails.getEmail());
                     tenant.setPhoneNumber(tenantDetails.getPhoneNumber());
                     tenant.setRentStartDate(tenantDetails.getRentStartDate());
 
-                    // Gérer l'association du bien de manière sécurisée
-                    if (tenantDetails.getPropertyId() != null) {
-                        Property property = propertyRepository.findById(tenantDetails.getPropertyId())
+                    Long newPropertyId = tenantDetails.getPropertyId();
+                    if (newPropertyId != null) {
+                        Property property = propertyRepository.findById(newPropertyId)
                                 .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
                         if (!property.getUser().getId().equals(currentUser.getId())) {
                             throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                         }
                         tenant.setProperty(property);
                     } else {
-                        tenant.setProperty(null); // Dissocier le locataire du bien
+                        tenant.setProperty(null);
                     }
 
                     return tenantRepository.save(tenant);
