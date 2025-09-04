@@ -3,7 +3,9 @@ package com.waraloyer.client.service;
 import com.waraloyer.client.model.Property;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.PropertyRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,27 +36,43 @@ public class PropertyService {
         return propertyRepository.findAll();
     }
 
-    public Optional<Property> findById(Long id) {
-        return propertyRepository.findById(id);
+    public Property findById(Long id, User currentUser) {
+        return propertyRepository.findById(id)
+                .map(property -> {
+                    if (!property.getUser().getId().equals(currentUser.getId())) {
+                        throw new AccessDeniedException("Accès refusé. Ce bien n'appartient pas à cet utilisateur.");
+                    }
+                    return property;
+                })
+                .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé avec l'ID: " + id));
     }
 
-    public Property update(Long id, Property propertyDetails) {
-        Property existingProperty = propertyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Bien non trouvé avec l'ID " + id));
 
-        // Mettez à jour les champs de l'objet existant
-        existingProperty.setName(propertyDetails.getName());
-        existingProperty.setAddress(propertyDetails.getAddress());
-        existingProperty.setType(propertyDetails.getType());
-        existingProperty.setRentAmount(propertyDetails.getRentAmount());
-        existingProperty.setChargesAmount(propertyDetails.getChargesAmount());
-        existingProperty.setDescription(propertyDetails.getDescription());
-        existingProperty.setRentPaymentDate(propertyDetails.getRentPaymentDate());
-
-        return propertyRepository.save(existingProperty);
+    public List<Property> findByUserId(Long userId) {
+        return propertyRepository.findByUserId(userId);
     }
 
-    public void delete(Long id) {
-        propertyRepository.deleteById(id);
+
+    // Modifie update pour qu'il reçoive l'utilisateur
+    public Property update(Long id, Property propertyDetails, User currentUser) {
+        return propertyRepository.findById(id)
+                .map(property -> {
+                    if (!property.getUser().getId().equals(currentUser.getId())) {
+                        throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
+                    }
+                    // ... logique de mise à jour des champs
+                    return propertyRepository.save(property);
+                })
+                .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
+    }
+
+    public void delete(Long id, User currentUser) {
+        propertyRepository.findById(id)
+                .ifPresent(property -> {
+                    if (!property.getUser().getId().equals(currentUser.getId())) {
+                        throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
+                    }
+                    propertyRepository.deleteById(id);
+                });
     }
 }
