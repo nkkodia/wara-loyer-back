@@ -60,12 +60,20 @@ public class PropertyService {
                     if (!property.getUser().getId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                     }
-                    // ... logique de mise à jour des champs
+
+                    // Mettre à jour tous les champs ici
+                    property.setName(propertyDetails.getName());
+                    property.setAddress(propertyDetails.getAddress());
+                    property.setType(propertyDetails.getType());
+                    property.setRentAmount(propertyDetails.getRentAmount());
+                    property.setChargesAmount(propertyDetails.getChargesAmount());
+                    property.setDescription(propertyDetails.getDescription());
+                    property.setRentPaymentDate(propertyDetails.getRentPaymentDate());
+
                     return propertyRepository.save(property);
                 })
                 .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
     }
-
     public void delete(Long id, User currentUser) {
         propertyRepository.findById(id)
                 .ifPresent(property -> {

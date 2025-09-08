@@ -36,16 +36,31 @@ public class TenantService {
     }
 
     /**
-     * Crée un nouveau locataire l'associant à l'utilisateur actuel.
-     * @param tenant L'objet Property à créer.
+     * Crée un nouveau locataire et l'associe à l'utilisateur et au bien spécifiés.
+     * @param tenant L'objet Tenant à créer.
      * @param user L'utilisateur actuellement authentifié.
      * @return L'objet Tenant créé.
      */
     public Tenant create(Tenant tenant, User user) {
         tenant.setUser(user);
+
+        // Gérer l'association du bien de manière sécurisée
+        if (tenant.getPropertyId() != null) {
+            Property property = propertyRepository.findById(tenant.getPropertyId())
+                    .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
+
+            // Vérifier que le bien appartient à l'utilisateur actuel
+            if (!property.getUser().getId().equals(user.getId())) {
+                throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
+            }
+
+            tenant.setProperty(property);
+        } else {
+            tenant.setProperty(null); // Créer sans bien si aucun ID n'est fourni
+        }
+
         return tenantRepository.save(tenant);
     }
-
     public void deleteById(Long id, Long userId) {
         Optional<Tenant> tenant = tenantRepository.findById(id);
         if (tenant.isPresent() && tenant.get().getUser().getId().equals(userId)) {
