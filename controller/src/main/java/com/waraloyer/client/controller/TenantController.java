@@ -1,6 +1,7 @@
 package com.waraloyer.client.controller;
 
 
+import com.waraloyer.client.dto.TenantCreateDTO;
 import com.waraloyer.client.dto.TenantUpdateDTO;
 import com.waraloyer.client.model.Tenant;
 import com.waraloyer.client.model.User;
@@ -32,11 +33,11 @@ public class TenantController {
     }
 
     @PostMapping
-    public ResponseEntity<Tenant> createTenant(@RequestBody Tenant tenant, Authentication authentication) {
+    public ResponseEntity<Tenant> createTenant(@RequestBody TenantCreateDTO tenantDto, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        Tenant newTenant = tenantService.create(tenant, currentUser);
+        Tenant newTenant = tenantService.create(tenantDto, currentUser);
         return new ResponseEntity<>(newTenant, HttpStatus.CREATED);
     }
 

@@ -1,5 +1,6 @@
 package com.waraloyer.client.service;
 
+import com.waraloyer.client.dto.TenantCreateDTO;
 import com.waraloyer.client.dto.TenantUpdateDTO;
 import com.waraloyer.client.model.Property;
 import com.waraloyer.client.model.Tenant;
@@ -35,39 +36,28 @@ public class TenantService {
         return tenantRepository.findById(id);
     }
 
-    /**
-     * Crée un nouveau locataire et l'associe à l'utilisateur et au bien spécifiés.
-     * @param tenant L'objet Tenant à créer.
-     * @param user L'utilisateur actuellement authentifié.
-     * @return L'objet Tenant créé.
-     */
-    public Tenant create(Tenant tenant, User user) {
+
+    public Tenant create(TenantCreateDTO tenantDto, User user) {
+        Tenant tenant = new Tenant();
+        tenant.setFirstName(tenantDto.getFirstName());
+        tenant.setLastName(tenantDto.getLastName());
+        tenant.setEmail(tenantDto.getEmail());
+        tenant.setPhoneNumber(tenantDto.getPhoneNumber());
+        tenant.setRentStartDate(tenantDto.getRentStartDate());
         tenant.setUser(user);
 
-        // Gérer l'association du bien de manière sécurisée
-        if (tenant.getPropertyId() != null) {
-            Property property = propertyRepository.findById(tenant.getPropertyId())
+        if (tenantDto.getPropertyId() != null) {
+            Property property = propertyRepository.findById(tenantDto.getPropertyId())
                     .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
-
-            // Vérifier que le bien appartient à l'utilisateur actuel
             if (!property.getUser().getId().equals(user.getId())) {
                 throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
             }
-
             tenant.setProperty(property);
         } else {
-            tenant.setProperty(null); // Créer sans bien si aucun ID n'est fourni
+            tenant.setProperty(null);
         }
 
         return tenantRepository.save(tenant);
-    }
-    public void deleteById(Long id, Long userId) {
-        Optional<Tenant> tenant = tenantRepository.findById(id);
-        if (tenant.isPresent() && tenant.get().getUser().getId().equals(userId)) {
-            tenantRepository.deleteById(id);
-        } else {
-            throw new IllegalArgumentException("Locataire non trouvé ou vous n'êtes pas autorisé à le supprimer.");
-        }
     }
 
     public List<Tenant> findAll() {
