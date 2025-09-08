@@ -18,4 +18,6 @@ public interface SmsLogRepository extends JpaRepository<SmsLog, Long> {
 
     @Query("SELECT COUNT(s) FROM SmsLog s WHERE s.user.id = :userId AND s.sentDate BETWEEN :startDate AND :endDate")
     Long countByUserIdAndSentDateBetween(@Param("userId") Long userId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+    List<SmsLog> findByRentalId(Long rentalId);
 }

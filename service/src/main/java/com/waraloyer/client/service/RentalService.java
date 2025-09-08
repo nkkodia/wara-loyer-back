@@ -163,4 +163,10 @@ public class RentalService {
         rental.setLastRelanceSentDate(LocalDate.now());
         return rentalRepository.save(rental);
     }
+
+    public boolean belongsToUser(Long rentalId, Long userId) {
+        return rentalRepository.findById(rentalId)
+                .map(rental -> rental.getUser().getId().equals(userId))
+                .orElse(false);
+    }
 }

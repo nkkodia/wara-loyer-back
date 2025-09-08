@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -32,12 +34,16 @@ public class SmsLogService {
     private String fromPhoneNumber;
 
     private final SmsLogRepository smsLogRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
+
+    private final RentalService rentalService;
+
 
     @Autowired
-    public SmsLogService(SmsLogRepository smsLogRepository, UserRepository userRepository) {
+    public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, RentalService rentalService) {
         this.smsLogRepository = smsLogRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
+        this.rentalService = rentalService;
     }
 
     /**
@@ -90,5 +96,15 @@ public class SmsLogService {
 
     public List<SmsLog> findAll() {
         return smsLogRepository.findAll();
+    }
+    public List<SmsLog> findByRentalIdAndUserId(Long rentalId, Authentication authentication) {
+        User currentUser = userService.findUserByEmail(authentication.getName());
+
+        // Vérifiez que la location appartient bien à l'utilisateur
+        if (!rentalService.belongsToUser(rentalId, currentUser.getId())) {
+            throw new AccessDeniedException("Accès refusé. Cette location n'appartient pas à cet utilisateur.");
+        }
+
+        return smsLogRepository.findByRentalId(rentalId);
     }
 }
