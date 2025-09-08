@@ -20,17 +20,20 @@ public class TenantMessageLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Ajoute la relation avec User
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user; // Le bailleur
+    private User user;
 
+    // Assure-toi que l'entité est bien liée au locataire
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id")
-    private Tenant tenant; // Le locataire
+    private Tenant tenant;
 
+    // Assure-toi que l'entité est bien liée au bien
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id")
-    private Property property; // Le bien associé
+    private Property property;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;

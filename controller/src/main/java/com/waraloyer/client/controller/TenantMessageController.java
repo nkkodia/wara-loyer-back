@@ -1,7 +1,10 @@
 package com.waraloyer.client.controller;
 
+import com.waraloyer.client.dto.TenantMessageDTO;
 import com.waraloyer.client.model.TenantMessageLog;
 import com.waraloyer.client.model.User;
+import com.waraloyer.client.repository.RentalRepository;
+import com.waraloyer.client.repository.TenantMessageLogRepository;
 import com.waraloyer.client.service.TenantMessageService;
 import com.waraloyer.client.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +17,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Tag(name = "Communication Locataire", description = "Endpoints pour l'envoi et la consultation des messages des locataires.")
@@ -23,27 +28,33 @@ public class TenantMessageController {
 
     private final TenantMessageService tenantMessageService;
     private final UserService userService;
+    private final TenantMessageLogRepository tenantMessageRepository;
+    private final RentalRepository rentalRepository;
+
 
     @Autowired
-    public TenantMessageController(TenantMessageService tenantMessageService, UserService userService) {
+    public TenantMessageController(TenantMessageService tenantMessageService, UserService userService, TenantMessageLogRepository tenantMessageRepository, RentalRepository rentalRepository) {
         this.tenantMessageService = tenantMessageService;
         this.userService = userService;
+        this.tenantMessageRepository = tenantMessageRepository;
+        this.rentalRepository = rentalRepository;
     }
 
-    @Operation(summary = "Un locataire signale un problème (public)",
-            description = "Endpoint public permettant à un locataire de signaler un problème via un lien SMS. Aucune authentification n'est requise.")
-    @ApiResponse(responseCode = "200", description = "Message enregistré avec succès.")
-    @ApiResponse(responseCode = "400", description = "Locataire ou message invalide.")
-    @PostMapping("/report-problem/{tenantId}")
-    public ResponseEntity<TenantMessageLog> reportProblem(@PathVariable Long tenantId, @RequestBody String message) {
-        try {
-            TenantMessageLog savedMessage = tenantMessageService.reportProblem(tenantId, message);
-            return new ResponseEntity<>(savedMessage, HttpStatus.OK);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+    @PostMapping("/report-problem/{rentalId}")
+    public ResponseEntity<?> reportProblem(@PathVariable Long rentalId, @RequestBody TenantMessageDTO messageDto) {
+        return rentalRepository.findById(rentalId)
+                .map(rental -> {
+                    TenantMessageLog message = new TenantMessageLog();
+                    // Assure-toi que le locataire et le bien sont bien extraits de la location
+                    message.setTenant(rental.getTenant());
+                    message.setProperty(rental.getProperty());
+                    message.setMessage(messageDto.getMessageContent());
+                    message.setSentDate(Instant.from(LocalDateTime.now()));
+                    tenantMessageRepository.save(message);
+                    return new ResponseEntity<>("Message enregistré", HttpStatus.CREATED);
+                })
+                .orElse(new ResponseEntity<>("Location non trouvée", HttpStatus.NOT_FOUND));
     }
-
     @Operation(summary = "Lister les messages reçus (sécurisé)",
             description = "Retourne la liste des messages reçus par l'utilisateur (bailleur) authentifié.")
     @ApiResponse(responseCode = "200", description = "Liste des messages récupérée avec succès.")
