@@ -1,5 +1,6 @@
 package com.waraloyer.client.service;
 
+import com.waraloyer.client.dto.TenantUpdateDTO;
 import com.waraloyer.client.model.Property;
 import com.waraloyer.client.model.Tenant;
 import com.waraloyer.client.model.User;
@@ -58,22 +59,23 @@ public class TenantService {
         return tenantRepository.findAll();
     }
 
-    public Tenant updateTenant(Long id, Tenant tenantDetails, User currentUser) {
+    public Tenant updateTenant(Long id, TenantUpdateDTO tenantDetails, User currentUser) {
         return tenantRepository.findById(id)
                 .map(tenant -> {
                     if (!tenant.getUser().getId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le locataire n'appartient pas à cet utilisateur.");
                     }
 
+                    // Mettre à jour les champs
                     tenant.setFirstName(tenantDetails.getFirstName());
                     tenant.setLastName(tenantDetails.getLastName());
                     tenant.setEmail(tenantDetails.getEmail());
                     tenant.setPhoneNumber(tenantDetails.getPhoneNumber());
                     tenant.setRentStartDate(tenantDetails.getRentStartDate());
 
-                    Long newPropertyId = tenantDetails.getPropertyId();
-                    if (newPropertyId != null) {
-                        Property property = propertyRepository.findById(newPropertyId)
+                    // Gérer l'association du bien via l'ID
+                    if (tenantDetails.getPropertyId() != null) {
+                        Property property = propertyRepository.findById(tenantDetails.getPropertyId())
                                 .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
                         if (!property.getUser().getId().equals(currentUser.getId())) {
                             throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
