@@ -1,5 +1,6 @@
 package com.waraloyer.client.controller;
 
+import com.waraloyer.client.dto.PropertyDTO;
 import com.waraloyer.client.model.Property;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.PropertyService;
@@ -14,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -28,47 +30,57 @@ public class PropertyController {
         this.userService = userService;
     }
 
-    // CREATE - Créer un nouveau bien
+    // CREATE - Créer un nouveau bien (retourne un DTO)
     @PostMapping
-    public ResponseEntity<Property> createProperty(@RequestBody Property property, Authentication authentication) {
+    public ResponseEntity<PropertyDTO> createProperty(@RequestBody Property property, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
         Property newProperty = propertyService.create(property, currentUser);
-        return new ResponseEntity<>(newProperty, HttpStatus.CREATED);
+        return new ResponseEntity<>(new PropertyDTO(newProperty), HttpStatus.CREATED);
     }
 
-
+    // READ - Lister tous les biens de l'utilisateur (retourne une liste de DTO)
     @GetMapping
-    public ResponseEntity<List<Property>> getAllProperties(Authentication authentication) {
+    public ResponseEntity<List<PropertyDTO>> getAllProperties(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
-        List<Property> properties = propertyService.findByUserId(currentUser.getId());
-        return new ResponseEntity<>(properties, HttpStatus.OK);
+        List<PropertyDTO> propertyDTOs = propertyService.findByUserId(currentUser.getId()).stream()
+                .map(PropertyDTO::new)
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(propertyDTOs, HttpStatus.OK);
     }
 
+    // READ - Obtenir un bien par son ID (retourne un DTO)
     @GetMapping("/{id}")
-    public ResponseEntity<Property> getPropertyById(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<PropertyDTO> getPropertyById(@PathVariable Long id, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
         try {
             Property property = propertyService.findById(id, currentUser);
-            return new ResponseEntity<>(property, HttpStatus.OK);
+            return new ResponseEntity<>(new PropertyDTO(property), HttpStatus.OK);
         } catch (AccessDeniedException e) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN); // Accès refusé
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (EntityNotFoundException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND); // Bien non trouvé
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
+    // UPDATE - Mettre à jour un bien existant (retourne un DTO)
     @PutMapping("/{id}")
-    public ResponseEntity<Property> updateProperty(@PathVariable Long id, @RequestBody Property propertyDetails, Authentication authentication) {
+    public ResponseEntity<PropertyDTO> updateProperty(@PathVariable Long id, @RequestBody Property propertyDetails, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        Property updatedProperty = propertyService.update(id, propertyDetails, currentUser);
-        return new ResponseEntity<>(updatedProperty, HttpStatus.OK);
+        try {
+            Property updatedProperty = propertyService.update(id, propertyDetails, currentUser);
+            return new ResponseEntity<>(new PropertyDTO(updatedProperty), HttpStatus.OK);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     // DELETE - Supprimer un bien par son ID
@@ -77,8 +89,13 @@ public class PropertyController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        // Le service doit vérifier si le bien appartient bien à l'utilisateur
-        propertyService.delete(id, currentUser);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        try {
+            propertyService.delete(id, currentUser);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }
