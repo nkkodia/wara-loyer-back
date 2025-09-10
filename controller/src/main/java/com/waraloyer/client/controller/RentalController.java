@@ -4,9 +4,11 @@ import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.RentalService;
 import com.waraloyer.client.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -69,11 +71,19 @@ public class RentalController {
     @ApiResponse(responseCode = "200", description = "Location mise à jour avec succès.")
     @ApiResponse(responseCode = "404", description = "Location non trouvée.")
     @PutMapping("/{id}")
-    public ResponseEntity<Rental> updateRental(@PathVariable Long id, @RequestBody Rental rentalDetails) {
-        Rental updatedRental = rentalService.update(id, rentalDetails);
-        return new ResponseEntity<>(updatedRental, HttpStatus.OK);
-    }
+    public ResponseEntity<Rental> updateRental(@PathVariable Long id, @RequestBody Rental rentalDetails, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
+        try {
+            Rental updatedRental = rentalService.update(id, rentalDetails, currentUser);
+            return new ResponseEntity<>(updatedRental, HttpStatus.OK);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
     @Operation(summary = "Marquer une location comme payée",
             description = "Met à jour le statut d'une location en 'PAYÉ' pour l'utilisateur authentifié.")
     @ApiResponse(responseCode = "200", description = "Location marquée comme payée avec succès.")

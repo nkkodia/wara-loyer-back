@@ -6,6 +6,7 @@ import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.RentalRepository;
 import com.waraloyer.client.repository.SmsLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -52,15 +53,24 @@ public class RentalService {
         return rentalRepository.findById(id);
     }
 
-    public Rental update(Long id, Rental rentalDetails) {
+    public Rental update(Long id, Rental rentalDetails, User currentUser) {
         Rental existingRental = rentalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + id));
 
+        if (!existingRental.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Accès non autorisé.");
+        }
+
+        // Logique de mise à jour des champs
         existingRental.setDueDate(rentalDetails.getDueDate());
         existingRental.setAmountDue(rentalDetails.getAmountDue());
         existingRental.setPaymentDate(rentalDetails.getPaymentDate());
         existingRental.setStatus(rentalDetails.getStatus());
         existingRental.setComments(rentalDetails.getComments());
+        existingRental.setReminderSent(rentalDetails.isReminderSent());
+        existingRental.setLastReminderSentDate(rentalDetails.getLastReminderSentDate());
+        existingRental.setRelanceSent(rentalDetails.isRelanceSent());
+        existingRental.setLastRelanceSentDate(rentalDetails.getLastRelanceSentDate());
 
         return rentalRepository.save(existingRental);
     }
