@@ -2,6 +2,7 @@ package com.waraloyer.client.service;
 
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.rest.api.v2010.account.MessageCreator;
 import com.twilio.type.PhoneNumber;
 import com.waraloyer.client.model.SmsLog;
 import com.waraloyer.client.model.User;
@@ -17,6 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -46,43 +50,41 @@ public class SmsLogService {
         this.rentalService = rentalService;
     }
 
-    /**
-     * Envoie un SMS à un numéro de téléphone et enregistre l'opération.
-     * @param user L'utilisateur qui initie l'envoi.
-     * @param to Le numéro de téléphone du destinataire.
-     * @param messageBody Le corps du message.
-     * @param type Le type de message (RAPPEL, RELANCE, etc.).
-     */
-    public SmsLog sendSms(User user, String to, String messageBody, String type) {
+    public SmsLog sendSms(User user, String to, String messageBody, String type, LocalDateTime scheduleDate) {
         SmsLog smsLog = new SmsLog();
         try {
             Twilio.init(accountSid, authToken);
-            Message.creator(
+
+            MessageCreator creator = Message.creator(
                     new PhoneNumber(to),
                     new PhoneNumber(fromPhoneNumber),
                     messageBody
-            ).create();
+            );
 
-            smsLog.setUser(user);
-            smsLog.setToPhoneNumber(to);
-            smsLog.setMessage(messageBody);
-            smsLog.setType(type);
-            smsLog.setSentDate(LocalDate.now());
+            if (scheduleDate != null) {
+                // La date de planification doit être en UTC
+                ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                creator.setSendAt(zonedDateTime);
+            }
+
+            creator.create(); // Crée et envoie ou planifie le message
             smsLog.setStatus("SENT");
             logger.info("SMS de type '{}' envoyé avec succès au numéro {} pour l'utilisateur {}", type, to, user.getEmail());
 
         } catch (Exception e) {
+            smsLog.setStatus("FAILED");
             logger.error("Échec de l'envoi du SMS de type '{}' au numéro {}: {}", type, to, e.getMessage());
+        } finally {
+            // Sauvegarder le log, qu'il y ait eu succès ou échec
             smsLog.setUser(user);
             smsLog.setToPhoneNumber(to);
             smsLog.setMessage(messageBody);
             smsLog.setType(type);
             smsLog.setSentDate(LocalDate.now());
-            smsLog.setStatus("FAILED");
         }
+
         return smsLogRepository.save(smsLog);
     }
-
     /**
      * Récupère l'historique des SMS pour un utilisateur donné.
      * @param userId L'ID de l'utilisateur.

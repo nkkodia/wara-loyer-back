@@ -1,5 +1,6 @@
 package com.waraloyer.client.controller;
 
+import com.waraloyer.client.dto.SmsRequestDTO;
 import com.waraloyer.client.model.SmsLog;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.SmsLogService;
@@ -52,19 +53,13 @@ public class SmsLogController {
         return new ResponseEntity<>(smsLogs, HttpStatus.OK);
     }
 
-    /**
-     * Envoie un SMS pour une relance manuelle et enregistre l'opération.
-     * @param to Le numéro de téléphone du destinataire.
-     * @param messageBody Le corps du message.
-     * @param type Le type de message.
-     * @return Le log du SMS envoyé.
-     */
+
     @PostMapping("/send-relance")
-    public ResponseEntity<SmsLog> sendRelanceSms(@RequestParam String to, @RequestParam String messageBody, @RequestParam String type, Authentication authentication) {
+    public ResponseEntity<SmsLog> sendRelanceSms(@RequestBody SmsRequestDTO requestDTO, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        SmsLog log = smsLogService.sendSms(currentUser, to, messageBody, type);
+        SmsLog log = smsLogService.sendSms(currentUser, requestDTO.getToPhoneNumber(), requestDTO.getMessageBody(), requestDTO.getType(), requestDTO.getScheduleDate());
         return new ResponseEntity<>(log, HttpStatus.OK);
     }
 }
