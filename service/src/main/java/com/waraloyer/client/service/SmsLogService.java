@@ -53,36 +53,34 @@ public class SmsLogService {
      * @param messageBody Le corps du message.
      * @param type Le type de message (RAPPEL, RELANCE, etc.).
      */
-    public void sendSms(User user, String to, String messageBody, String type) {
+    public SmsLog sendSms(User user, String to, String messageBody, String type) {
+        SmsLog smsLog = new SmsLog();
         try {
             Twilio.init(accountSid, authToken);
-            Message message = Message.creator(
+            Message.creator(
                     new PhoneNumber(to),
                     new PhoneNumber(fromPhoneNumber),
                     messageBody
             ).create();
 
-            SmsLog smsLog = new SmsLog();
             smsLog.setUser(user);
-            smsLog.setToPhoneNumber(to); // Ajout de ce champ, assurez-vous qu'il existe dans le modèle SmsLog
+            smsLog.setToPhoneNumber(to);
             smsLog.setMessage(messageBody);
             smsLog.setType(type);
             smsLog.setSentDate(LocalDate.now());
             smsLog.setStatus("SENT");
-            smsLogRepository.save(smsLog);
             logger.info("SMS de type '{}' envoyé avec succès au numéro {} pour l'utilisateur {}", type, to, user.getEmail());
 
         } catch (Exception e) {
             logger.error("Échec de l'envoi du SMS de type '{}' au numéro {}: {}", type, to, e.getMessage());
-            SmsLog smsLog = new SmsLog();
             smsLog.setUser(user);
-            smsLog.setToPhoneNumber(to); // Ajout de ce champ
+            smsLog.setToPhoneNumber(to);
             smsLog.setMessage(messageBody);
             smsLog.setType(type);
             smsLog.setSentDate(LocalDate.now());
             smsLog.setStatus("FAILED");
-            smsLogRepository.save(smsLog);
         }
+        return smsLogRepository.save(smsLog);
     }
 
     /**
