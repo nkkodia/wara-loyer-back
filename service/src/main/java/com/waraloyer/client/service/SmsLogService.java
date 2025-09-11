@@ -50,36 +50,44 @@ public class SmsLogService {
         this.rentalService = rentalService;
     }
 
-    public SmsLog sendSms(User user, String to, String messageBody, String type, LocalDateTime scheduleDate, Long rentalId) {
+    public SmsLog sendSms(User user, String to, String messageBody, String type, LocalDateTime scheduleDate) {
         SmsLog smsLog = new SmsLog();
         try {
             Twilio.init(accountSid, authToken);
+
+            // La gestion du message ne doit pas être nulle
+            if (messageBody == null || messageBody.trim().isEmpty()) {
+                messageBody = "Le message est vide.";
+            }
+
             MessageCreator creator = Message.creator(
                     new PhoneNumber(to),
                     new PhoneNumber(fromPhoneNumber),
                     messageBody
             );
+
             if (scheduleDate != null) {
                 ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                Date date = Date.from(zonedDateTime.toInstant());
                 creator.setSendAt(zonedDateTime);
             }
+
             creator.create();
             smsLog.setStatus("SENT");
             logger.info("SMS de type '{}' envoyé avec succès au numéro {} pour l'utilisateur {}", type, to, user.getEmail());
+
         } catch (Exception e) {
             smsLog.setStatus("FAILED");
             logger.error("Échec de l'envoi du SMS de type '{}' au numéro {}: {}", type, to, e.getMessage());
         } finally {
-            // Sauvegarder le log, qu'il y ait eu succès ou échec
+            // Assurez-vous que tous les champs sont bien définis avant de sauvegarder
             smsLog.setUser(user);
             smsLog.setToPhoneNumber(to);
-            smsLog.setMessage(messageBody);
+            smsLog.setMessage(messageBody); // Assurez-vous que cette valeur n'est pas nulle
             smsLog.setType(type);
             smsLog.setSentDate(LocalDate.now());
-            if (rentalId != null) {
-                smsLog.setRental(rentalService.findById(rentalId).orElse(null));
-            }
         }
+
         return smsLogRepository.save(smsLog);
     }
     /**
