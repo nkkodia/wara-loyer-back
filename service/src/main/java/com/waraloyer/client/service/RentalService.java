@@ -185,4 +185,8 @@ public class RentalService {
                     return rental;
                 });
     }
+    public List<Rental> findByTenantId(Long tenantId, Long userId) {
+        // Logique de vérification d'autorisation
+        return rentalRepository.findByTenantIdAndUserId(tenantId, userId);
+    }
 }

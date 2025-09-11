@@ -22,5 +22,7 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
 
     @Query("SELECT SUM(r.amountDue) FROM Rental r WHERE r.user.id = :userId AND r.dueDate BETWEEN :startDate AND :endDate")
     BigDecimal sumAmountDueByUserIdAndDueDateBetween(@Param("userId") Long userId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    List<Rental> findByTenantIdAndUserId(Long tenantId, Long userId);
+
 
 }

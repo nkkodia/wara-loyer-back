@@ -142,4 +142,24 @@ public class RentalController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+    @Operation(summary = "Lister les loyers d'un locataire",
+            description = "Retourne la liste des loyers pour un locataire spécifique, si l'utilisateur en est propriétaire.")
+    @ApiResponse(responseCode = "200", description = "Liste des loyers récupérée avec succès.")
+    @ApiResponse(responseCode = "403", description = "Accès non autorisé.")
+    @ApiResponse(responseCode = "404", description = "Locataire non trouvé.")
+    @GetMapping("/by-tenant/{tenantId}")
+    public ResponseEntity<List<Rental>> getRentalsByTenantId(@PathVariable Long tenantId, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        try {
+            List<Rental> rentals = rentalService.findByTenantId(tenantId, currentUser.getId());
+            return new ResponseEntity<>(rentals, HttpStatus.OK);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

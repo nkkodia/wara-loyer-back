@@ -2,9 +2,11 @@
 package com.waraloyer.client.service;
 
 import com.lowagie.text.DocumentException;
+import org.springframework.security.access.AccessDeniedException;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 
 import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
@@ -32,10 +34,27 @@ public class ReceiptService {
             throw new IllegalArgumentException("La quittance ne peut être générée que pour un loyer payé.");
         }
 
-        // Générer le HTML (même logique que précédemment)
-        String html = "<html><body><h1>Quittance de Loyer</h1>...</body></html>"; // Utiliser ta logique de génération de HTML
+        // Vérification de la propriété
+        if (!rental.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("Accès refusé. Le loyer n'appartient pas à cet utilisateur.");
+        }
 
-        // Créer le PDF à partir du HTML
+        // Utilise DateTimeFormatter pour un formatage plus propre
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        // Assure-toi que les objets imbriqués ne sont pas nuls
+        String tenantFullName = rental.getTenant() != null ? rental.getTenant().getFirstName() + " " + rental.getTenant().getLastName() : "N/A";
+        String propertyAddress = rental.getProperty() != null ? rental.getProperty().getAddress() : "N/A";
+
+        // Générer le HTML
+        String html = "<html><body><h1>Quittance de Loyer</h1>"
+                + "<p>Locataire : " + tenantFullName + "</p>"
+                + "<p>Bien : " + propertyAddress + "</p>"
+                + "<p>Montant : " + rental.getAmountDue().toString() + "</p>"
+                + "<p>Méthode de paiement : " + paymentMethod + "</p>"
+                + "<p>Date de paiement : " + rental.getPaymentDate().format(dateFormatter) + "</p>"
+                + "</body></html>";
+
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             ITextRenderer renderer = new ITextRenderer();
             renderer.setDocumentFromString(html);
