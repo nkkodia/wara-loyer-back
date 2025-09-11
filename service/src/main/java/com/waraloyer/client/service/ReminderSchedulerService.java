@@ -49,7 +49,7 @@ public class ReminderSchedulerService {
                 if (LocalDate.now().isEqual(reminderDate) && !rental.isReminderSent()) {
                     String personalizedMessage = createPersonalizedMessage(rental, config.getSmsReminderMessage());
                     // Utilise la signature sendSms correcte, avec une date de planification null pour l'envoi immédiat
-                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), personalizedMessage, "RAPPEL", null);
+                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), personalizedMessage, "RAPPEL", null, null);
                     rental.setReminderSent(true);
                     rental.setLastReminderSentDate(LocalDate.now());
                     rentalService.update(rental.getId(), rental, rental.getUser());
@@ -59,7 +59,7 @@ public class ReminderSchedulerService {
                 LocalDate relanceDate = rental.getDueDate().plusDays(config.getRelanceDaysAfter());
                 if (LocalDate.now().isEqual(relanceDate) && !rental.isRelanceSent() && rental.getStatus().equals("Due")) {
                     String personalizedMessage = createPersonalizedMessage(rental, config.getSmsRelanceMessage());
-                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), personalizedMessage, "RELANCE", null);
+                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), personalizedMessage, "RELANCE", null, null);
                     rental.setRelanceSent(true);
                     rental.setLastRelanceSentDate(LocalDate.now());
                     rentalService.update(rental.getId(), rental, rental.getUser());

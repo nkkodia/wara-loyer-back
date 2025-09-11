@@ -49,9 +49,6 @@ public class RentalService {
         return rentalRepository.findByUserId(userId);
     }
 
-    public Optional<Rental> findById(Long id) {
-        return rentalRepository.findById(id);
-    }
 
     public Rental update(Long id, Rental rentalDetails, User currentUser) {
         Rental existingRental = rentalRepository.findById(id)
@@ -178,5 +175,8 @@ public class RentalService {
         return rentalRepository.findById(rentalId)
                 .map(rental -> rental.getUser().getId().equals(userId))
                 .orElse(false);
+    }
+    public Optional<Rental> findById(Long id) {
+        return rentalRepository.findById(id);
     }
 }

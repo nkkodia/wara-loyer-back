@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Tag(name = "Communication Locataire", description = "Endpoints pour l'envoi et la consultation des messages des locataires.")
@@ -45,11 +46,11 @@ public class TenantMessageController {
         return rentalRepository.findById(rentalId)
                 .map(rental -> {
                     TenantMessageLog message = new TenantMessageLog();
-                    // Assure-toi que le locataire et le bien sont bien extraits de la location
                     message.setTenant(rental.getTenant());
                     message.setProperty(rental.getProperty());
                     message.setMessage(messageDto.getMessageContent());
-                    message.setSentDate(Instant.from(LocalDateTime.now()));
+                    message.setSentDate(Instant.from(LocalDateTime.now().atZone(ZoneId.systemDefault())));
+
                     tenantMessageRepository.save(message);
                     return new ResponseEntity<>("Message enregistré", HttpStatus.CREATED);
                 })

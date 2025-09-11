@@ -59,7 +59,7 @@ public class SmsLogController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        SmsLog log = smsLogService.sendSms(currentUser, requestDTO.getToPhoneNumber(), requestDTO.getMessageBody(), requestDTO.getType(), requestDTO.getScheduleDate());
+        SmsLog log = smsLogService.sendSms(currentUser, requestDTO.getToPhoneNumber(), requestDTO.getMessageBody(), requestDTO.getType(), requestDTO.getScheduleDate(),null);
         return new ResponseEntity<>(log, HttpStatus.OK);
     }
 }
