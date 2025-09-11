@@ -33,23 +33,28 @@ public class ClientConfigService {
     }
 
     public ClientConfig getOrCreate(User user) {
-        // Vérifier si une configuration existe déjà pour cet utilisateur
         Optional<ClientConfig> existingConfig = clientConfigRepository.findByUserId(user.getId());
 
-        // Si une configuration existe, la retourner
         if (existingConfig.isPresent()) {
             return existingConfig.get();
         } else {
-            // Sinon, créer une nouvelle configuration par défaut
             ClientConfig newConfig = new ClientConfig();
             newConfig.setUser(user);
-            // Initialisez les champs par défaut ici
-            newConfig.setSmsReminderMessage("Bonjour, {LOCATAIRE}. Nous vous rappelons que votre loyer de {MONTANT} F CFA pour le bien situé à {ADRESSE_BIEN} est dû le {DATE_ECHEANCE}. Merci de votre paiement !");
-            newConfig.setSmsRelanceMessage("Bonjour, {LOCATAIRE}. Nous vous rappelons que votre loyer de {MONTANT} F CFA pour le bien situé à {ADRESSE_BIEN} est en retard. Merci de régulariser votre situation.");
-            newConfig.setOwnerEmail(user.getEmail());
-            newConfig.setDefaultPaymentMethod("Contact"); // Valeur par défaut
-            // ... initialisez les autres champs
+            newConfig.setSmsReminderMessage("Bonjour {LOCATAIRE}, votre loyer de {MONTANT} FCFA pour le bien situé {ADRESSE_BIEN} est dû le {DATE_ECHEANCE}. Merci de régler à temps.");
 
+            // Corrige la logique pour que le message de relance par défaut inclut le placeholder
+            String defaultRelanceMessage = "Rappel urgent : le loyer de {MONTANT} FCFA pour le bien {ADRESSE_BIEN} est en retard. Merci de régulariser. Pour signaler un problème, cliquez ici: {URL_PROBLEME}";
+            newConfig.setSmsRelanceMessage(defaultRelanceMessage);
+
+            newConfig.setOwnerEmail(user.getEmail());
+            newConfig.setDefaultPaymentMethod("RIB");
+            newConfig.setOwnerEmail(user.getEmail());
+            newConfig.setReminderDaysBefore(5); // Valeur par défaut
+            newConfig.setRelanceDaysAfter(5); // Valeur par défaut
+            newConfig.setDefaultPaymentMethod("RIB"); // Valeur par défaut
+            newConfig.setRibDetails(""); // Chaîne vide par défaut
+            newConfig.setMobileMoneyLink(""); // Chaîne vide par défaut
+            newConfig.setContactPersonDetails("");
             return clientConfigRepository.save(newConfig);
         }
     }

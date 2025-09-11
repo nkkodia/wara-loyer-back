@@ -36,10 +36,6 @@ public class ClientConfigController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        // Ajoutez l'URL de signalement de problème dans le message de relance
-        String relanceMessage = config.getSmsRelanceMessage() + " Pour signaler un problème, cliquez sur ce lien : {URL_PROBLEME}";
-        config.setSmsRelanceMessage(relanceMessage);
-
         ClientConfig savedConfig = configService.save(config, currentUser);
         return new ResponseEntity<>(savedConfig, HttpStatus.OK);
     }
