@@ -176,7 +176,13 @@ public class RentalService {
                 .map(rental -> rental.getUser().getId().equals(userId))
                 .orElse(false);
     }
-    public Optional<Rental> findById(Long id) {
-        return rentalRepository.findById(id);
+    public Optional<Rental> findById(Long id, User currentUser) {
+        return rentalRepository.findById(id)
+                .map(rental -> {
+                    if (!rental.getUser().getId().equals(currentUser.getId())) {
+                        throw new AccessDeniedException("Accès refusé. Ce loyer n'appartient pas à cet utilisateur.");
+                    }
+                    return rental;
+                });
     }
 }

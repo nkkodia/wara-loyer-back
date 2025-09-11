@@ -4,6 +4,8 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.rest.api.v2010.account.MessageCreator;
 import com.twilio.type.PhoneNumber;
+import com.waraloyer.client.model.ClientConfig;
+import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.SmsLog;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.SmsLogRepository;
@@ -80,7 +82,7 @@ public class SmsLogService {
             smsLog.setType(type);
             smsLog.setSentDate(LocalDate.now());
             if (rentalId != null) {
-                smsLog.setRental(rentalService.findById(rentalId).orElse(null));
+                smsLog.setRental(rentalService.findById(rentalId,user).orElse(null));
             }
         }
         return smsLogRepository.save(smsLog);
@@ -107,4 +109,5 @@ public class SmsLogService {
 
         return smsLogRepository.findByRentalId(rentalId);
     }
+
 }

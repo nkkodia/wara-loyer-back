@@ -55,17 +55,21 @@ public class RentalController {
         return new ResponseEntity<>(rentals, HttpStatus.OK);
     }
 
-    @Operation(summary = "Obtenir une location par ID",
-            description = "Retourne une location spécifique par son ID.")
-    @ApiResponse(responseCode = "200", description = "Location trouvée.")
-    @ApiResponse(responseCode = "404", description = "Location non trouvée.")
     @GetMapping("/{id}")
-    public ResponseEntity<Rental> getRentalById(@PathVariable Long id) {
-        return rentalService.findById(id)
-                .map(rental -> new ResponseEntity<>(rental, HttpStatus.OK))
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
+    public ResponseEntity<Rental> getRentalById(@PathVariable Long id, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
+        try {
+            Rental rental = rentalService.findById(id, currentUser)
+                    .orElseThrow(() -> new EntityNotFoundException("Location non trouvée avec l'ID " + id));
+            return new ResponseEntity<>(rental, HttpStatus.OK);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
     @Operation(summary = "Mettre à jour une location",
             description = "Met à jour une location existante par son ID.")
     @ApiResponse(responseCode = "200", description = "Location mise à jour avec succès.")
