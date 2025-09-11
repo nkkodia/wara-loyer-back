@@ -43,10 +43,11 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
-                                "/"
+                                "/",
+                                "/api/tenant-messages/report-problem/**"
                         ).permitAll()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
-                                "/api/config/**", "/api/reports/**", "/api/sms/**", "/api/tenant-messages/report-problem/**" // <-- AJOUTE CETTE LIGNE
+                                "/api/config/**", "/api/reports/**", "/api/sms/**"  // <-- AJOUTE CETTE LIGNE
                         ).authenticated()
                         .anyRequest().authenticated()
                 )
