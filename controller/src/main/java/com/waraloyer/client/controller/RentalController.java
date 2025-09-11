@@ -1,12 +1,16 @@
 package com.waraloyer.client.controller;
 
+import com.waraloyer.client.dto.ReceiptRequestDTO;
 import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
+import com.waraloyer.client.service.ReceiptService;
 import com.waraloyer.client.service.RentalService;
 import com.waraloyer.client.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -16,6 +20,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Locations", description = "Endpoints pour la gestion des locations.")
@@ -25,11 +30,13 @@ public class RentalController {
 
     private final RentalService rentalService;
     private final UserService userService;
+    private final ReceiptService receiptService;
 
     @Autowired
-    public RentalController(RentalService rentalService, UserService userService) {
+    public RentalController(RentalService rentalService, UserService userService, ReceiptService receiptService) {
         this.rentalService = rentalService;
         this.userService = userService;
+        this.receiptService = receiptService;
     }
 
     @Operation(summary = "Crée une nouvelle location",
@@ -110,5 +117,29 @@ public class RentalController {
     public ResponseEntity<Void> deleteRental(@PathVariable Long id) {
         rentalService.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    @Operation(summary = "Générer une quittance de loyer au format PDF",
+            description = "Génère et télécharge une quittance de loyer au format PDF pour un loyer payé.")
+    @ApiResponse(responseCode = "200", description = "Quittance générée et téléchargée avec succès.")
+    @ApiResponse(responseCode = "404", description = "Loyer non trouvé ou non payé.")
+    @PostMapping("/receipt")
+    public ResponseEntity<byte[]> generateReceipt(@RequestBody ReceiptRequestDTO receiptRequest, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        try {
+            byte[] pdfBytes = receiptService.generateReceiptPdf(receiptRequest.getRentalId(), currentUser, receiptRequest.getPaymentMethod());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            String filename = "quittance_" + receiptRequest.getRentalId() + "_" + LocalDate.now() + ".pdf";
+            headers.setContentDispositionFormData("attachment", filename);
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (EntityNotFoundException | IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }
