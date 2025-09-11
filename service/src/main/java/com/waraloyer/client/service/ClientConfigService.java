@@ -40,21 +40,20 @@ public class ClientConfigService {
         } else {
             ClientConfig newConfig = new ClientConfig();
             newConfig.setUser(user);
+            newConfig.setOwnerEmail(user.getEmail());
+            newConfig.setReminderDaysBefore(5);
+            newConfig.setRelanceDaysAfter(5);
+            newConfig.setDefaultPaymentMethod("RIB");
+            newConfig.setRibDetails("");
+            newConfig.setMobileMoneyLink("");
+            newConfig.setContactPersonDetails("");
+
+            // Le message de rappel par défaut
             newConfig.setSmsReminderMessage("Bonjour {LOCATAIRE}, votre loyer de {MONTANT} FCFA pour le bien situé {ADRESSE_BIEN} est dû le {DATE_ECHEANCE}. Merci de régler à temps.");
 
-            // Corrige la logique pour que le message de relance par défaut inclut le placeholder
-            String defaultRelanceMessage = "Rappel urgent : le loyer de {MONTANT} FCFA pour le bien {ADRESSE_BIEN} est en retard. Merci de régulariser. Pour signaler un problème, cliquez ici: {URL_PROBLEME}";
-            newConfig.setSmsRelanceMessage(defaultRelanceMessage);
+            // Le message de relance par défaut avec le placeholder pour l'URL
+            newConfig.setSmsRelanceMessage("Rappel urgent : le loyer de {MONTANT} FCFA pour le bien {ADRESSE_BIEN} est en retard. Merci de régulariser. Pour signaler un problème, cliquez ici: {URL_PROBLEME}");
 
-            newConfig.setOwnerEmail(user.getEmail());
-            newConfig.setDefaultPaymentMethod("RIB");
-            newConfig.setOwnerEmail(user.getEmail());
-            newConfig.setReminderDaysBefore(5); // Valeur par défaut
-            newConfig.setRelanceDaysAfter(5); // Valeur par défaut
-            newConfig.setDefaultPaymentMethod("RIB"); // Valeur par défaut
-            newConfig.setRibDetails(""); // Chaîne vide par défaut
-            newConfig.setMobileMoneyLink(""); // Chaîne vide par défaut
-            newConfig.setContactPersonDetails("");
             return clientConfigRepository.save(newConfig);
         }
     }
