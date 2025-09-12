@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,9 +66,10 @@ public class ReportService {
      * @param rentalId L'ID de la location.
      * @param userId L'ID de l'utilisateur.
      * @param monthlyCosts Les coûts mensuels à ajouter.
+     * @param description La description de la dépense.
      * @return Le rapport financier mis à jour.
      */
-    public Map<String, Object> addMonthlyCosts(Long rentalId, Long userId, BigDecimal monthlyCosts) {
+    public Map<String, Object> addMonthlyCosts(Long rentalId, Long userId, BigDecimal monthlyCosts, String description) {
         Rental rental = rentalRepository.findById(rentalId)
                 .orElseThrow(() -> new RuntimeException("Location non trouvée avec l'ID " + rentalId));
 
@@ -75,11 +77,16 @@ public class ReportService {
             throw new RuntimeException("Accès non autorisé.");
         }
 
-        // Met à jour les coûts mensuels et sauvegarde
-        rental.setMonthlyCosts(monthlyCosts);
+        // Met à jour les coûts mensuels et les commentaires
+        BigDecimal currentCosts = rental.getMonthlyCosts() != null ? rental.getMonthlyCosts() : BigDecimal.ZERO;
+        rental.setMonthlyCosts(currentCosts.add(monthlyCosts));
+
+        // Ajoute la description aux commentaires existants
+        String currentComments = rental.getComments() != null ? rental.getComments() : "";
+        rental.setComments(currentComments + "\n" + LocalDate.now() + ": " + description);
+
         rentalRepository.save(rental);
 
-        // Ré-génère et retourne le rapport mis à jour
         return getFinancialOverview(userId);
     }
 }

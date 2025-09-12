@@ -47,7 +47,8 @@ public class SecurityConfig {
                                 "/api/tenant-messages/report-problem/**"
                         ).permitAll()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
-                                "/api/config/**", "/api/reports/**", "/api/sms/**"  // <-- AJOUTE CETTE LIGNE
+                                "/api/config/**", "/api/reports/**", "/api/sms/**", "/api/rentals/{id}/expenses/**" // <-- AJOUTE CETTE LIGNE
+                                // <-- AJOUTE CETTE LIGNE
                         ).authenticated()
                         .anyRequest().authenticated()
                 )

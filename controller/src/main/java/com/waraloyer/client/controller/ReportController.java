@@ -46,11 +46,14 @@ public class ReportController {
     @ApiResponse(responseCode = "200", description = "Coûts ajoutés et rapport mis à jour.")
     @ApiResponse(responseCode = "404", description = "Location ou utilisateur non trouvé.")
     @PostMapping("/financial/{rentalId}/costs")
-    public ResponseEntity<Map<String, Object>> addMonthlyCosts(@PathVariable Long rentalId, @RequestBody BigDecimal monthlyCosts, Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> addMonthlyCosts(@PathVariable Long rentalId, @RequestBody Map<String, Object> requestBody, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        Map<String, Object> updatedReport = reportService.addMonthlyCosts(rentalId, currentUser.getId(), monthlyCosts);
+        BigDecimal monthlyCosts = new BigDecimal(requestBody.get("monthlyCosts").toString());
+        String description = requestBody.get("description").toString();
+
+        Map<String, Object> updatedReport = reportService.addMonthlyCosts(rentalId, currentUser.getId(), monthlyCosts, description);
         return new ResponseEntity<>(updatedReport, HttpStatus.OK);
     }
 }
