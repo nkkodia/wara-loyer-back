@@ -1,6 +1,7 @@
 // src/main/java/com/waraloyer/client/service/ExpenseService.java
 package com.waraloyer.client.service;
 
+import com.waraloyer.client.dto.ExpenseDTO;
 import com.waraloyer.client.model.Expense;
 import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ExpenseService {
@@ -29,11 +31,21 @@ public class ExpenseService {
         this.rentalService = rentalService;
     }
 
-    public List<Expense> findByRentalIdAndDateBetween(Long rentalId, LocalDate startDate, LocalDate endDate, User currentUser) {
+    public List<ExpenseDTO> findByRentalIdAndDateBetween(Long rentalId, LocalDate startDate, LocalDate endDate, User currentUser) {
         if (!rentalService.belongsToUser(rentalId, currentUser.getId())) {
             throw new AccessDeniedException("Accès refusé. Cette location n'appartient pas à cet utilisateur.");
         }
-        return expenseRepository.findByRentalIdAndDateBetween(rentalId, startDate, endDate);
+        return expenseRepository.findByRentalIdAndDateBetween(rentalId, startDate, endDate)
+                .stream()
+                .map(expense -> {
+                    ExpenseDTO dto = new ExpenseDTO();
+                    dto.setId(expense.getId());
+                    dto.setAmount(expense.getAmount());
+                    dto.setDescription(expense.getDescription());
+                    dto.setDate(expense.getDate());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     public Expense addExpense(Long rentalId, BigDecimal amount, String description, User currentUser) {

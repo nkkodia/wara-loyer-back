@@ -42,13 +42,13 @@ public class ExpenseController {
     @ApiResponse(responseCode = "403", description = "Accès non autorisé.")
     @ApiResponse(responseCode = "404", description = "Location non trouvée.")
     @GetMapping("/rentals/{rentalId}")
-    public ResponseEntity<List<Expense>> getExpensesForRental(@PathVariable Long rentalId, @RequestParam String month, Authentication authentication) {
+    public ResponseEntity<List<ExpenseDTO>> getExpensesForRental(@PathVariable Long rentalId, @RequestParam String month, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
         try {
             LocalDate monthDate = LocalDate.parse(month + "-01");
-            List<Expense> expenses = expenseService.findByRentalIdAndDateBetween(rentalId, monthDate, monthDate.withDayOfMonth(monthDate.lengthOfMonth()), currentUser);
+            List<ExpenseDTO> expenses = expenseService.findByRentalIdAndDateBetween(rentalId, monthDate, monthDate.withDayOfMonth(monthDate.lengthOfMonth()), currentUser);
             return new ResponseEntity<>(expenses, HttpStatus.OK);
         } catch (AccessDeniedException e) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
