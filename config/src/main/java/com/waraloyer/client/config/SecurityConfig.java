@@ -47,7 +47,10 @@ public class SecurityConfig {
                                 "/api/tenant-messages/report-problem/**"
                         ).permitAll()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
-                                "/api/config/**", "/api/reports/**", "/api/sms/**", "/api/expense"
+                                "/api/config/**", "/api/reports/**", "/api/sms/**"
+                        ).authenticated()
+                        .requestMatchers(
+                                "/api/expenses/**"
                         ).authenticated()
                         .anyRequest().authenticated()
                 )
