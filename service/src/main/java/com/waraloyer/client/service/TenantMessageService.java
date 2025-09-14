@@ -61,7 +61,7 @@ public class TenantMessageService {
         if (!rentalService.tenantBelongsToUser(tenantId, currentUser.getId())) {
             throw new AccessDeniedException("Accès refusé. Ce locataire n'appartient pas à cet utilisateur.");
         }
-        return tenantMessageLogRepository.findByTenantId(tenantId);
+        return tenantMessageLogRepository.findByTenant_Id(tenantId);
     }
 
     public List<TenantMessageLog> findByRentalId(Long rentalId, User currentUser) {
