@@ -44,7 +44,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/",
-                                "/api/tenant-messages/report-problem/**"
+                                "/api/tenant-messages/report-problem/**",
+                                "/api/auth/create-password"
                         ).permitAll()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
                                 "/api/config/**", "/api/reports/**", "/api/sms/**"

@@ -1,7 +1,9 @@
 package com.waraloyer.client.service;
 
+import com.waraloyer.client.dto.UserCreatePasswordDTO;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,13 +29,19 @@ public class AuthService {
     }
 
     // Méthode pour créer le mot de passe de l'utilisateur
-    public User createPassword(User user) {
-        if (user.getPassword() == null || user.getPassword().isEmpty()) {
-            throw new IllegalArgumentException("Le mot de passe ne peut pas être vide.");
+    public User createPassword(UserCreatePasswordDTO dto) {
+        // 1. Chercher l'utilisateur par email
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé."));
+
+        // 2. Vérifier si le mot de passe a déjà été créé
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Mot de passe déjà créé.");
         }
-        User existingUser = findByEmail(user.getEmail());
-        existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(existingUser);
+
+        // 3. Encoder le mot de passe et sauvegarder
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        return userRepository.save(user);
     }
 
     // Méthode pour valider l'accès de l'utilisateur

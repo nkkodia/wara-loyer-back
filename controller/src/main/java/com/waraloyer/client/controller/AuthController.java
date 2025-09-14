@@ -1,12 +1,14 @@
 package com.waraloyer.client.controller;
 
 import com.waraloyer.client.config.JwtUtils;
+import com.waraloyer.client.dto.UserCreatePasswordDTO;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.AuthService;
 import com.waraloyer.client.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,11 +43,18 @@ public class AuthController {
     @Operation(summary = "Crée le mot de passe initial d'un utilisateur",
             description = "Permet à un utilisateur pré-enregistré par l'admin de définir son mot de passe pour la première fois.")
     @ApiResponse(responseCode = "200", description = "Mot de passe créé avec succès.")
+    @ApiResponse(responseCode = "400", description = "Mot de passe déjà créé.")
     @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé.")
     @PostMapping("/create-password")
-    public ResponseEntity<?> createPassword(@RequestBody User user) {
-        User updatedUser = authService.createPassword(user);
-        return ResponseEntity.ok("Mot de passe créé avec succès pour " + updatedUser.getEmail());
+    public ResponseEntity<?> createPassword(@RequestBody UserCreatePasswordDTO dto) {
+        try {
+            authService.createPassword(dto);
+            return ResponseEntity.ok("Mot de passe créé avec succès pour " + dto.getEmail());
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>("Email inconnu.", HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>("Mot de passe déjà créé.", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Operation(summary = "Connecte un utilisateur",
