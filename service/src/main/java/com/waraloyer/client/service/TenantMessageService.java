@@ -6,6 +6,7 @@ import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.TenantMessageLogRepository;
 import com.waraloyer.client.repository.TenantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,11 +17,13 @@ public class TenantMessageService {
 
     private final TenantMessageLogRepository tenantMessageLogRepository;
     private final TenantRepository tenantRepository;
+    private final RentalService rentalService;
 
     @Autowired
-    public TenantMessageService(TenantMessageLogRepository tenantMessageLogRepository, TenantRepository tenantRepository) {
+    public TenantMessageService(TenantMessageLogRepository tenantMessageLogRepository, TenantRepository tenantRepository, RentalService rentalService) {
         this.tenantMessageLogRepository = tenantMessageLogRepository;
         this.tenantRepository = tenantRepository;
+        this.rentalService = rentalService;
     }
 
     /**
@@ -51,5 +54,21 @@ public class TenantMessageService {
      */
     public List<TenantMessageLog> getMessagesByUserId(Long userId) {
         return tenantMessageLogRepository.findByUserId(userId);
+    }
+
+    public List<TenantMessageLog> findByTenantId(Long tenantId, User currentUser) {
+        // Vérifie si le loyer associé au locataire appartient à l'utilisateur
+        if (!rentalService.tenantBelongsToUser(tenantId, currentUser.getId())) {
+            throw new AccessDeniedException("Accès refusé. Ce locataire n'appartient pas à cet utilisateur.");
+        }
+        return tenantMessageLogRepository.findByTenantId(tenantId);
+    }
+
+    public List<TenantMessageLog> findByRentalId(Long rentalId, User currentUser) {
+        // Vérifie si le loyer appartient à l'utilisateur
+        if (!rentalService.belongsToUser(rentalId, currentUser.getId())) {
+            throw new AccessDeniedException("Accès refusé. Ce loyer n'appartient pas à cet utilisateur.");
+        }
+        return tenantMessageLogRepository.findByRentalId(rentalId);
     }
 }

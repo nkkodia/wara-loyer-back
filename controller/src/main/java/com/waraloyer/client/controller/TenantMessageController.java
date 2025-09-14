@@ -68,4 +68,20 @@ public class TenantMessageController {
         List<TenantMessageLog> messages = tenantMessageService.getMessagesByUserId(currentUser.getId());
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
+
+    @GetMapping("/by-rental/{rentalId}")
+    public ResponseEntity<List<TenantMessageLog>> getMessagesByRental(@PathVariable Long rentalId, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+        List<TenantMessageLog> messages = tenantMessageService.findByRentalId(rentalId, currentUser);
+        return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
+
+    @GetMapping("/by-tenant/{tenantId}")
+    public ResponseEntity<List<TenantMessageLog>> getMessagesByTenant(@PathVariable Long tenantId, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+        List<TenantMessageLog> messages = tenantMessageService.findByTenantId(tenantId, currentUser);
+        return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
 }

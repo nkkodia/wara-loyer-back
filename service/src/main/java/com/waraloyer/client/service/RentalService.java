@@ -189,4 +189,9 @@ public class RentalService {
         // Logique de vérification d'autorisation
         return rentalRepository.findByTenantIdAndUserId(tenantId, userId);
     }
+    public boolean tenantBelongsToUser(Long tenantId, Long userId) {
+        return rentalRepository.findByTenantId(tenantId)
+                .map(rental -> rental.getUser().getId().equals(userId))
+                .orElse(false);
+    }
 }
