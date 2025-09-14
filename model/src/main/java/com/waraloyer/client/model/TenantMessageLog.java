@@ -20,20 +20,21 @@ public class TenantMessageLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Ajoute la relation avec User
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    // Assure-toi que l'entité est bien liée au locataire
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id")
     private Tenant tenant;
 
-    // Assure-toi que l'entité est bien liée au bien
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "property_id")
     private Property property;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rental_id") // <-- Ajoute cette relation
+    private Rental rental;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
@@ -42,5 +43,5 @@ public class TenantMessageLog {
     private Instant sentDate;
 
     @Column(length = 50)
-    private String status; // Par exemple, "SENT", "READ"
+    private String status;
 }

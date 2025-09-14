@@ -10,5 +10,7 @@
     <include file="db/changelog/03-add-columns-to-sms-log.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/04-create-expense-table.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/05-create-tenant-message-log-table.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/06-add-rental-id-to-tenant-message-log.sql" relativeToChangelogFile="false"/>
+
 
 </databaseChangeLog>

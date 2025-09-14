@@ -14,6 +14,6 @@ public interface TenantMessageLogRepository extends JpaRepository<TenantMessageL
      * @return La liste des messages.
      */
     List<TenantMessageLog> findByUserId(Long userId);
-    List<TenantMessageLog> findByTenantId(Long tenantId);
+    List<TenantMessageLog> findByTenant_Id(Long tenantId);
     List<TenantMessageLog> findByRental_Id(Long rentalId);
 }
