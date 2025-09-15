@@ -15,6 +15,7 @@
     <include file="db/changelog/08-create-subscription-table.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/09-update-subscriptions.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/10-add-subscription-to-user.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/11-add-price-column-to-subscription.sql" relativeToChangelogFile="false"/>
 
 
 </databaseChangeLog>
