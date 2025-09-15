@@ -30,6 +30,8 @@ public class ClientConfig {
     private String ribDetails;
     private String mobileMoneyLink;
     private String contactPersonDetails;
+    private Integer monthlySmsLimit; // <-- Assure-toi que c'est bien un Integer
+    private Integer messageCountThisMonth;
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")

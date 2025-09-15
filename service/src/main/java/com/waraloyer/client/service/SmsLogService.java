@@ -4,6 +4,7 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.rest.api.v2010.account.MessageCreator;
 import com.twilio.type.PhoneNumber;
+import com.waraloyer.client.exception.MessageLimitExceededException;
 import com.waraloyer.client.model.ClientConfig;
 import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.SmsLog;
@@ -45,60 +46,82 @@ public class SmsLogService {
     private final SmsLogRepository smsLogRepository;
     private final UserService userService;
 
+    private final ClientConfigService clientConfigService;
     private final RentalService rentalService;
 
 
     @Autowired
-    public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, RentalService rentalService) {
+    public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, ClientConfigService clientConfigService, RentalService rentalService) {
         this.smsLogRepository = smsLogRepository;
         this.userService = userService;
+        this.clientConfigService = clientConfigService;
         this.rentalService = rentalService;
     }
 
     public SmsLog sendSms(User user, String to, String messageBody, String type, LocalDateTime scheduleDate, Long rentalId) {
+        ClientConfig config = clientConfigService.getOrCreate(user); // Assurez-vous d'avoir ce service
+        if (config.getMessageCountThisMonth() >= config.getMonthlySmsLimit()) {
+            throw new MessageLimitExceededException("La limite de SMS mensuelle a été atteinte.");
+        }
+
         SmsLog smsLog = new SmsLog();
+        smsLog.setUser(user);
+        smsLog.setToPhoneNumber(to);
+        smsLog.setMessage(messageBody);
+        smsLog.setType(type);
+        smsLog.setSentDate(LocalDate.now());
+
         try {
             Twilio.init(accountSid, authToken);
 
-            if (messageBody == null || messageBody.trim().isEmpty()) {
-                messageBody = "Le message est vide.";
-            }
+            // Tenter d'abord l'envoi via WhatsApp
+            try {
+                MessageCreator creator = Message.creator(
+                        new PhoneNumber("whatsapp:" + to),
+                        new PhoneNumber("whatsapp:" + fromPhoneNumber),
+                        messageBody
+                );
 
-            // Déterminer l'expéditeur
-            String fromSender;
-            if (fromAlphanumericId != null && !fromAlphanumericId.isEmpty()) {
-                fromSender = fromAlphanumericId;
-            } else {
-                fromSender = fromPhoneNumber;
-            }
+                if (scheduleDate != null) {
+                    ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                    creator.setSendAt(zonedDateTime);
+                }
+                creator.create();
+                smsLog.setStatus("SENT_WHATSAPP");
+                logger.info("Message WhatsApp de type '{}' envoyé avec succès au numéro {}", type, to);
+            } catch (Exception whatsappException) {
+                // Si l'envoi WhatsApp échoue, envoyer un SMS classique
+                logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
 
-            MessageCreator creator;
-            if (fromSender.matches("^[a-zA-Z0-9 ]+$")) {
-                creator = Message.creator(new PhoneNumber(to), fromSender, messageBody);
-            } else {
-                creator = Message.creator(new PhoneNumber(to), new PhoneNumber(fromSender), messageBody);
-            }
+                MessageCreator creator = Message.creator(
+                        new PhoneNumber(to),
+                        new PhoneNumber(fromPhoneNumber),
+                        messageBody
+                );
 
-            if (scheduleDate != null) {
-                ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
-                creator.setSendAt(zonedDateTime);
+                if (scheduleDate != null) {
+                    ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                    creator.setSendAt(zonedDateTime);
+                }
+                creator.create();
+                smsLog.setStatus("SENT_SMS");
+                logger.info("Message SMS de type '{}' envoyé avec succès au numéro {}", type, to);
             }
-            creator.create();
-            smsLog.setStatus("SENT");
-            logger.info("SMS de type '{}' envoyé avec succès au numéro {} pour l'utilisateur {} depuis l'expéditeur {}", type, to, user.getEmail(), fromSender);
-        } catch (Exception e) {
+        } catch (Exception finalException) {
             smsLog.setStatus("FAILED");
-            logger.error("Échec de l'envoi du SMS de type '{}' au numéro {}: {}", type, to, e.getMessage());
+            logger.error("Échec total de l'envoi de message de type '{}' au numéro {}: {}", type, to, finalException.getMessage());
         } finally {
-            smsLog.setUser(user);
-            smsLog.setToPhoneNumber(to);
-            smsLog.setMessage(messageBody);
-            smsLog.setType(type);
-            smsLog.setSentDate(LocalDate.now());
             if (rentalId != null) {
                 smsLog.setRental(rentalService.findById(rentalId, user).orElse(null));
             }
         }
+
+        // Incrémenter le compteur de SMS si l'envoi a réussi
+        if (smsLog.getStatus().startsWith("SENT")) {
+            config.setMessageCountThisMonth(config.getMessageCountThisMonth() + 1);
+            clientConfigService.save(config, user);
+        }
+
         return smsLogRepository.save(smsLog);
     }
     /**
