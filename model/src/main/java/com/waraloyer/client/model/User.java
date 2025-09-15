@@ -29,6 +29,9 @@ public class User implements UserDetails {
     private LocalDateTime createdAt;
     private LocalDate subscriptionEndDate; // <-- NOUVEAU
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "subscription_id")
+    private Subscription subscription;
 
     @ManyToMany(fetch = FetchType.EAGER) // Charge les rôles avec l'utilisateur
     @JoinTable(name = "user_roles",

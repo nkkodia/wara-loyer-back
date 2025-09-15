@@ -59,8 +59,10 @@ public class SmsLogService {
     }
 
     public SmsLog sendSms(User user, String to, String messageBody, String type, LocalDateTime scheduleDate, Long rentalId) {
-        ClientConfig config = clientConfigService.getOrCreate(user); // Assurez-vous d'avoir ce service
-        if (config.getMessageCountThisMonth() >= config.getMonthlySmsLimit()) {
+        ClientConfig config = clientConfigService.getOrCreate(user);
+        Integer monthlySmsLimit = user.getSubscription().getMonthlySmsLimit();
+        Integer messageCount = config.getMessageCountThisMonth();
+        if (messageCount != null && monthlySmsLimit != null && messageCount >= monthlySmsLimit) {
             throw new MessageLimitExceededException("La limite de SMS mensuelle a été atteinte.");
         }
 
@@ -70,6 +72,16 @@ public class SmsLogService {
         smsLog.setMessage(messageBody);
         smsLog.setType(type);
         smsLog.setSentDate(LocalDate.now());
+
+        Rental rental = null;
+        if (rentalId != null) {
+            rental = rentalService.findById(rentalId, user).orElse(null);
+            if (rental == null) {
+                logger.error("Rental with ID {} not found for user {}", rentalId, user.getEmail());
+                return null;
+            }
+        }
+        smsLog.setRental(rental);
 
         try {
             Twilio.init(accountSid, authToken);
@@ -110,13 +122,7 @@ public class SmsLogService {
         } catch (Exception finalException) {
             smsLog.setStatus("FAILED");
             logger.error("Échec total de l'envoi de message de type '{}' au numéro {}: {}", type, to, finalException.getMessage());
-        } finally {
-            if (rentalId != null) {
-                smsLog.setRental(rentalService.findById(rentalId, user).orElse(null));
-            }
         }
-
-        // Incrémenter le compteur de SMS si l'envoi a réussi
         if (smsLog.getStatus().startsWith("SENT")) {
             config.setMessageCountThisMonth(config.getMessageCountThisMonth() + 1);
             clientConfigService.save(config, user);

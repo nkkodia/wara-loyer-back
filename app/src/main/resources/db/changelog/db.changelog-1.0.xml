@@ -11,6 +11,10 @@
     <include file="db/changelog/04-create-expense-table.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/05-create-tenant-message-log-table.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/06-add-rental-id-to-tenant-message-log.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/07-add-sms-limits-to-client-config.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/08-create-subscription-table.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/09-update-subscriptions.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/10-add-subscription-to-user.sql" relativeToChangelogFile="false"/>
 
 
 </databaseChangeLog>
