@@ -30,7 +30,7 @@ public class ClientConfig {
     private String ribDetails;
     private String mobileMoneyLink;
     private String contactPersonDetails;
-    private Integer monthlySmsLimit; // <-- Assure-toi que c'est bien un Integer
+    private Integer monthlySmsLimit;
     private Integer messageCountThisMonth;
 
     @ManyToOne

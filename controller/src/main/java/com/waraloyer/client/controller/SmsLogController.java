@@ -53,11 +53,13 @@ public class SmsLogController {
 
 
     @PostMapping("/send-relance/{rentalId}")
-    public ResponseEntity<SmsLog> sendRelanceSms(@PathVariable Long rentalId, @RequestBody SmsRequestDTO requestDTO, Authentication authentication) {
+    public ResponseEntity<SmsLog> sendRelanceSms(@PathVariable Long rentalId, @RequestBody SmsRequestDTO relanceRequest, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        SmsLog log = smsLogService.sendSms(currentUser, requestDTO.getToPhoneNumber(), requestDTO.getMessageBody(), requestDTO.getType(), requestDTO.getScheduleDate(), rentalId);
+        String templateType = "RELANCE_URGENT";
+
+        SmsLog log = smsLogService.sendSms(currentUser, relanceRequest.getToPhoneNumber(), templateType, templateType, relanceRequest.getScheduleDate(), rentalId);
         return new ResponseEntity<>(log, HttpStatus.OK);
     }
 }

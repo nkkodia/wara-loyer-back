@@ -17,5 +17,4 @@
     <include file="db/changelog/09-update-subscriptions.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/10-add-subscription-to-user.sql" relativeToChangelogFile="false"/>
 
-
 </databaseChangeLog>

@@ -11,6 +11,7 @@ import com.waraloyer.client.model.SmsLog;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.SmsLogRepository;
 import com.waraloyer.client.repository.UserRepository;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class SmsLogService {
@@ -49,6 +52,9 @@ public class SmsLogService {
     private final ClientConfigService clientConfigService;
     private final RentalService rentalService;
 
+    private static final String TEMPLATE_RELANCE_NAME = "waraloyer_relance_v2";
+    private static final String TEMPLATE_RAPPEl_NAME = "waraloyer_rappel_v2";
+    private static final String TEMPLATE_RELANCE_URGENT_NAME = "waraloyer_relance_urgent_v2";
 
     @Autowired
     public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, ClientConfigService clientConfigService, RentalService rentalService) {
@@ -59,13 +65,6 @@ public class SmsLogService {
     }
 
     public SmsLog sendSms(User user, String to, String messageBody, String type, LocalDateTime scheduleDate, Long rentalId) {
-        ClientConfig config = clientConfigService.getOrCreate(user);
-        Integer monthlySmsLimit = user.getSubscription().getMonthlySmsLimit();
-        Integer messageCount = config.getMessageCountThisMonth();
-        if (messageCount != null && monthlySmsLimit != null && messageCount >= monthlySmsLimit) {
-            throw new MessageLimitExceededException("La limite de SMS mensuelle a été atteinte.");
-        }
-
         SmsLog smsLog = new SmsLog();
         smsLog.setUser(user);
         smsLog.setToPhoneNumber(to);
@@ -73,62 +72,89 @@ public class SmsLogService {
         smsLog.setType(type);
         smsLog.setSentDate(LocalDate.now());
 
-        Rental rental = null;
-        if (rentalId != null) {
-            rental = rentalService.findById(rentalId, user).orElse(null);
-            if (rental == null) {
-                logger.error("Rental with ID {} not found for user {}", rentalId, user.getEmail());
-                return null;
-            }
-        }
-        smsLog.setRental(rental);
-
         try {
             Twilio.init(accountSid, authToken);
 
-            // Tenter d'abord l'envoi via WhatsApp
-            try {
-                MessageCreator creator = Message.creator(
-                        new PhoneNumber("whatsapp:" + to),
-                        new PhoneNumber("whatsapp:" + fromPhoneNumber),
-                        messageBody
-                );
+            // Gérer le type d'envoi
+            if ("WHATSAPP_TEMPLATE".equals(type) || "RELANCE".equals(type) || "RAPPEL".equals(type)) {
+                try {
+                    String templateName = getTemplateNameByType(messageBody);
 
-                if (scheduleDate != null) {
-                    ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
-                    creator.setSendAt(zonedDateTime);
+                    // Récupère la location pour les variables
+                    Rental rental = rentalService.findById(rentalId, user).orElse(null);
+                    if (rental == null) {
+                        throw new IllegalArgumentException("Location non trouvée.");
+                    }
+
+                    Map<String, String> variables = new HashMap<>();
+                    variables.put("1", rental.getTenant().getFirstName()); // Nom du locataire
+                    variables.put("2", rental.getTenant().getProperty().getAddress()); // Adresse du bien
+
+                    if ("RELANCE_URGENT".equals(type)) {
+                        variables.put("1", String.valueOf(rental.getAmountDue())); // Montant
+                        variables.put("2", rental.getTenant().getProperty().getAddress()); // Adresse
+                    }
+
+                    MessageCreator creator = Message
+                            .creator(new com.twilio.type.PhoneNumber("whatsapp:" + to),
+                                    new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber),
+                                    templateName) // On utilise le nom du template ici
+                            .setContentVariables(new JSONObject(variables).toString());
+
+                    if (scheduleDate != null) {
+                        ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                        creator.setSendAt(zonedDateTime);
+                    }
+                    creator.create();
+                    smsLog.setStatus("SENT_WHATSAPP");
+
+                } catch (Exception whatsappException) {
+                    logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
+
+                    MessageCreator creator = Message.creator(
+                            new PhoneNumber(to),
+                            new PhoneNumber(fromPhoneNumber),
+                            messageBody
+                    );
+                    if (scheduleDate != null) {
+                        ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                        creator.setSendAt(zonedDateTime);
+                    }
+                    creator.create();
+                    smsLog.setStatus("SENT_SMS");
                 }
-                creator.create();
-                smsLog.setStatus("SENT_WHATSAPP");
-                logger.info("Message WhatsApp de type '{}' envoyé avec succès au numéro {}", type, to);
-            } catch (Exception whatsappException) {
-                // Si l'envoi WhatsApp échoue, envoyer un SMS classique
-                logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
-
+            } else {
                 MessageCreator creator = Message.creator(
                         new PhoneNumber(to),
                         new PhoneNumber(fromPhoneNumber),
                         messageBody
                 );
-
                 if (scheduleDate != null) {
                     ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
                     creator.setSendAt(zonedDateTime);
                 }
                 creator.create();
                 smsLog.setStatus("SENT_SMS");
-                logger.info("Message SMS de type '{}' envoyé avec succès au numéro {}", type, to);
             }
         } catch (Exception finalException) {
             smsLog.setStatus("FAILED");
             logger.error("Échec total de l'envoi de message de type '{}' au numéro {}: {}", type, to, finalException.getMessage());
-        }
-        if (smsLog.getStatus().startsWith("SENT")) {
-            config.setMessageCountThisMonth(config.getMessageCountThisMonth() + 1);
-            clientConfigService.save(config, user);
+        } finally {
+            if (rentalId != null) {
+                smsLog.setRental(rentalService.findById(rentalId, user).orElse(null));
+            }
         }
 
         return smsLogRepository.save(smsLog);
+    }
+
+    private String getTemplateNameByType(String type) {
+        return switch (type) {
+            case "RAPPEL" -> TEMPLATE_RAPPEl_NAME;
+            case "RELANCE" -> TEMPLATE_RELANCE_NAME;
+            case "RELANCE_URGENT" -> TEMPLATE_RELANCE_URGENT_NAME;
+            default -> throw new IllegalArgumentException("Type de template non supporté: " + type);
+        };
     }
     /**
      * Récupère l'historique des SMS pour un utilisateur donné.

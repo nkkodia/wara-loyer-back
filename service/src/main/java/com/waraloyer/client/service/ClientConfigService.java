@@ -48,11 +48,8 @@ public class ClientConfigService {
             newConfig.setMobileMoneyLink("");
             newConfig.setContactPersonDetails("");
 
-            // Le message de rappel par défaut
-            newConfig.setSmsReminderMessage("Bonjour {LOCATAIRE}, votre loyer de {MONTANT} FCFA pour le bien situé {ADRESSE_BIEN} est dû le {DATE_ECHEANCE}. Merci de régler à temps.");
-
-            // Le message de relance par défaut avec le placeholder pour l'URL
-            newConfig.setSmsRelanceMessage("Rappel urgent : le loyer de {MONTANT} FCFA pour le bien {ADRESSE_BIEN} est en retard. Merci de régulariser. Pour signaler un problème, cliquez ici: {URL_PROBLEME}");
+            newConfig.setSmsReminderMessage("Bonjour {{1}}, nous vous rappelons que le paiement de votre loyer pour le bien situé au {{2}} est dû avant le {{3}}.");
+            newConfig.setSmsRelanceMessage("Bonjour {{1}}, nous vous rappelons que le paiement de votre loyer pour le bien situé au {{2}} est en retard. Merci de régulariser la situation dès que possible.");
 
             return clientConfigRepository.save(newConfig);
         }
