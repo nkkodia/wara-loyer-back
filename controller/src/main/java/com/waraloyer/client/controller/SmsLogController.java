@@ -52,14 +52,23 @@ public class SmsLogController {
     }
 
 
-    @PostMapping("/send-relance/{rentalId}")
-    public ResponseEntity<SmsLog> sendRelanceSms(@PathVariable Long rentalId, @RequestBody SmsRequestDTO relanceRequest, Authentication authentication) {
+    @Operation(summary = "Envoyer un message de relance/rappel",
+            description = "Envoie un message de type RAPPEL, RELANCE ou RELANCE_URGENTE_URL pour un loyer donné.")
+    @ApiResponse(responseCode = "200", description = "Message envoyé et journalisé avec succès.")
+    @ApiResponse(responseCode = "400", description = "Données de la requête invalides.")
+    @PostMapping("/send-message/{rentalId}")
+    public ResponseEntity<SmsLog> sendMessage(@PathVariable Long rentalId, @RequestBody SmsRequestDTO request, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
-        String templateType = "RELANCE_URGENT";
-
-        SmsLog log = smsLogService.sendSms(currentUser, relanceRequest.getToPhoneNumber(), templateType, templateType, relanceRequest.getScheduleDate(), rentalId);
+        // The message body is no longer passed as it's determined by the 'type'
+        SmsLog log = smsLogService.sendSms(
+                currentUser,
+                request.getToPhoneNumber(),
+                request.getType(),
+                request.getScheduleDate(),
+                rentalId
+        );
         return new ResponseEntity<>(log, HttpStatus.OK);
     }
 }

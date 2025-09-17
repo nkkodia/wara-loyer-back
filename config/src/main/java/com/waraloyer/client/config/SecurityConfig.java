@@ -37,7 +37,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
-                                "/api/auth/**",
+                                "/api/auth/login",
+                                "/api/auth/register",
                                 "/api/tenant-messages/report-problem/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
@@ -46,6 +47,7 @@ public class SecurityConfig {
                                 "/api/tenant-messages/report-problem/**",
                                 "/api/auth/create-password"
                         ).permitAll()
+                        .requestMatchers("/api/management/subscription").authenticated()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
                                 "/api/config/**", "/api/reports/**", "/api/sms/**"
                         ).authenticated()

@@ -47,9 +47,7 @@ public class ReminderSchedulerService {
                 // Logique pour le rappel
                 LocalDate reminderDate = rental.getDueDate().minusDays(config.getReminderDaysBefore());
                 if (LocalDate.now().isEqual(reminderDate) && !rental.isReminderSent()) {
-                    String personalizedMessage = createPersonalizedMessage(rental, config.getSmsReminderMessage());
-                    // Utilise la signature sendSms correcte, avec une date de planification null pour l'envoi immédiat
-                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), personalizedMessage, "RAPPEL", null, null);
+                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), "RAPPEL", null, null);
                     rental.setReminderSent(true);
                     rental.setLastReminderSentDate(LocalDate.now());
                     rentalService.update(rental.getId(), rental, rental.getUser());
@@ -58,8 +56,7 @@ public class ReminderSchedulerService {
                 // Logique pour la relance
                 LocalDate relanceDate = rental.getDueDate().plusDays(config.getRelanceDaysAfter());
                 if (LocalDate.now().isEqual(relanceDate) && !rental.isRelanceSent() && rental.getStatus().equals("Due")) {
-                    String personalizedMessage = createPersonalizedMessage(rental, config.getSmsRelanceMessage());
-                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), personalizedMessage, "RELANCE", null, null);
+                    smsLogService.sendSms(rental.getUser(), rental.getTenant().getPhoneNumber(), "RELANCE", null, null);
                     rental.setRelanceSent(true);
                     rental.setLastRelanceSentDate(LocalDate.now());
                     rentalService.update(rental.getId(), rental, rental.getUser());
@@ -69,21 +66,4 @@ public class ReminderSchedulerService {
         logger.info("Fin de la tâche de planification des rappels et relances.");
     }
 
-    private String createPersonalizedMessage(Rental rental, String template) {
-        String message = template;
-
-        if (rental.getTenant() != null) {
-            message = message.replace("{LOCATAIRE}", rental.getTenant().getFirstName());
-        }
-        if (rental.getProperty() != null) {
-            message = message.replace("{ADRESSE_BIEN}", rental.getProperty().getAddress());
-        }
-        if (rental.getAmountDue() != null) {
-            message = message.replace("{MONTANT}", rental.getAmountDue().toString());
-        }
-
-        message = message.replace("{DATE_ECHEANCE}", rental.getDueDate().toString());
-
-        return message;
-    }
-}
+   }
