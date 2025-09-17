@@ -28,4 +28,7 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
 
     Optional<Rental> findByTenantId(Long tenantId);
 
+    // Automatically generated query to find the single most recent rental for a property.
+    Optional<Rental> findTopByPropertyIdOrderByDueDateDesc(Long propertyId);
+
 }

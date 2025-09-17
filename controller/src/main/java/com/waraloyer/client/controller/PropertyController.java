@@ -1,6 +1,7 @@
 package com.waraloyer.client.controller;
 
 import com.waraloyer.client.dto.PropertyDTO;
+import com.waraloyer.client.dto.PropertyWithRentalInfoDTO;
 import com.waraloyer.client.model.Property;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.PropertyService;
@@ -97,5 +98,13 @@ public class PropertyController {
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+
+    @GetMapping("/with-rental-info")
+    public ResponseEntity<List<PropertyWithRentalInfoDTO>> getAllPropertiesWithRentalInfo(Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+        List<PropertyWithRentalInfoDTO> properties = propertyService.findAllWithRentalInfo(currentUser);
+        return new ResponseEntity<>(properties, HttpStatus.OK);
     }
 }

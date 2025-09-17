@@ -1,13 +1,18 @@
 package com.waraloyer.client.service;
 
+import com.waraloyer.client.dto.PropertyWithRentalInfoDTO;
 import com.waraloyer.client.model.Property;
+import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.PropertyRepository;
+import com.waraloyer.client.repository.RentalRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,10 +20,12 @@ import java.util.Optional;
 public class PropertyService {
 
     private final PropertyRepository propertyRepository;
+    private final RentalRepository rentalRepository;
 
     @Autowired
-    public PropertyService(PropertyRepository propertyRepository) {
+    public PropertyService(PropertyRepository propertyRepository, RentalRepository rentalRepository) {
         this.propertyRepository = propertyRepository;
+        this.rentalRepository = rentalRepository;
     }
 
     /**
@@ -93,5 +100,27 @@ public class PropertyService {
         return propertyRepository.findById(propertyId)
                 .map(rental -> rental.getUser().getId().equals(userId))
                 .orElse(false);
+    }
+
+    public List<PropertyWithRentalInfoDTO> findAllWithRentalInfo(User user) {
+        List<Property> properties = propertyRepository.findByUserId(user.getId());
+        List<PropertyWithRentalInfoDTO> dtoList = new ArrayList<>();
+
+        for (Property property : properties) {
+            // Query the database to find the latest rental for this property
+            Optional<Rental> latestRental = rentalRepository.findTopByPropertyIdOrderByDueDateDesc(property.getId());
+
+            PropertyWithRentalInfoDTO dto = new PropertyWithRentalInfoDTO();
+            // Copy data from the property
+            BeanUtils.copyProperties(property, dto);
+
+            if (latestRental.isPresent()) {
+                dto.setLastRentAmount(latestRental.get().getAmountDue());
+                dto.setLastPaymentDate(latestRental.get().getPaymentDate());
+            }
+
+            dtoList.add(dto);
+        }
+        return dtoList;
     }
 }
