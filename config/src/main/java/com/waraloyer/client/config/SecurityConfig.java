@@ -39,7 +39,6 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
-                                "/api/tenant-messages/report-problem/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -49,7 +48,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/api/management/subscription").authenticated()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
-                                "/api/config/**", "/api/reports/**", "/api/sms/**"
+                                "/api/config/**", "/api/reports/**", "/api/sms/**","/api/tenant-messages/by-property/**"
                         ).authenticated()
                         .requestMatchers(
                                 "/api/expenses/**"
