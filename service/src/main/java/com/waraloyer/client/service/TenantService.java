@@ -49,7 +49,7 @@ public class TenantService {
         if (tenantDto.getPropertyId() != null) {
             Property property = propertyRepository.findById(tenantDto.getPropertyId())
                     .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
-            if (!property.getUser().getId().equals(user.getId())) {
+            if (!property.getId().equals(user.getId())) {
                 throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
             }
             tenant.setProperty(property);
@@ -82,7 +82,7 @@ public class TenantService {
                     if (tenantDetails.getPropertyId() != null) {
                         Property property = propertyRepository.findById(tenantDetails.getPropertyId())
                                 .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
-                        if (!property.getUser().getId().equals(currentUser.getId())) {
+                        if (!property.getId().equals(currentUser.getId())) {
                             throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                         }
                         tenant.setProperty(property);
@@ -97,12 +97,9 @@ public class TenantService {
 
     public void delete(Long id, User currentUser) {
         tenantRepository.findById(id).ifPresent(tenant -> {
-            // VÉRIFICATION D'AUTORISATION
             if (!tenant.getUser().getId().equals(currentUser.getId())) {
                 throw new AccessDeniedException("Accès refusé. Le locataire n'appartient pas à cet utilisateur.");
             }
-
-            // Suppression du locataire si l'autorisation est validée
             tenantRepository.deleteById(id);
         });
     }

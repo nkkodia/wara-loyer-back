@@ -26,6 +26,6 @@ public class PropertyDTO {
         this.chargesAmount = property.getChargesAmount();
         this.description = property.getDescription();
         this.rentPaymentDate = property.getRentPaymentDate();
-        this.userId = property.getUser().getId();
+        this.userId = property.getId();
     }
 }
