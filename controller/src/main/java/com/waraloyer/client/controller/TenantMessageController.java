@@ -29,33 +29,14 @@ public class TenantMessageController {
 
     private final TenantMessageService tenantMessageService;
     private final UserService userService;
-    private final TenantMessageLogRepository tenantMessageRepository;
-    private final RentalRepository rentalRepository;
-
 
     @Autowired
-    public TenantMessageController(TenantMessageService tenantMessageService, UserService userService, TenantMessageLogRepository tenantMessageRepository, RentalRepository rentalRepository) {
+    public TenantMessageController(TenantMessageService tenantMessageService, UserService userService) {
         this.tenantMessageService = tenantMessageService;
         this.userService = userService;
-        this.tenantMessageRepository = tenantMessageRepository;
-        this.rentalRepository = rentalRepository;
+
     }
 
-    @PostMapping("/report-problem/{rentalId}")
-    public ResponseEntity<?> reportProblem(@PathVariable Long rentalId, @RequestBody TenantMessageDTO messageDto) {
-        return rentalRepository.findById(rentalId)
-                .map(rental -> {
-                    TenantMessageLog message = new TenantMessageLog();
-                    message.setTenant(rental.getTenant());
-                    message.setProperty(rental.getProperty());
-                    message.setMessage(messageDto.getMessageContent());
-                    message.setSentDate(Instant.from(LocalDateTime.now().atZone(ZoneId.systemDefault())));
-
-                    tenantMessageRepository.save(message);
-                    return new ResponseEntity<>("Message enregistré", HttpStatus.CREATED);
-                })
-                .orElse(new ResponseEntity<>("Location non trouvée", HttpStatus.NOT_FOUND));
-    }
     @Operation(summary = "Lister les messages reçus (sécurisé)",
             description = "Retourne la liste des messages reçus par l'utilisateur (bailleur) authentifié.")
     @ApiResponse(responseCode = "200", description = "Liste des messages récupérée avec succès.")
@@ -84,11 +65,29 @@ public class TenantMessageController {
         List<TenantMessageLog> messages = tenantMessageService.findByTenantId(tenantId, currentUser);
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
+    
 
     @GetMapping("/by-property/{propertyId}")
     public ResponseEntity<List<TenantMessageLog>> getMessagesByProperty(@PathVariable Long propertyId, Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            // Retourne une réponse 401 si l'utilisateur n'est pas authentifié
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof UserDetails)) {
+            // L'objet principal n'est pas du type attendu, retourne une erreur d'authentification
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        UserDetails userDetails = (UserDetails) principal;
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        if (currentUser == null) {
+            // L'utilisateur n'a pas été trouvé, potentiellement une session expirée ou un jeton invalide
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
         List<TenantMessageLog> messages = tenantMessageService.findByPropertyId(propertyId, currentUser);
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
