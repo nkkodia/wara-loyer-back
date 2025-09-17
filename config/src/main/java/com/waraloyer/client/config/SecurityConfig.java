@@ -37,18 +37,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
-                                "/api/auth/login",
-                                "/api/auth/register",
+                                "/api/auth/**",
                                 "/api/tenant-messages/report-problem/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/",
                                 "/api/tenant-messages/report-problem/**",
-                                "/api/auth/create-password",
-                                "/api/auth/users"
+                                "/api/auth/create-password"
                         ).permitAll()
-                        .requestMatchers("/api/auth/subscription").authenticated()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
                                 "/api/config/**", "/api/reports/**", "/api/sms/**"
                         ).authenticated()
