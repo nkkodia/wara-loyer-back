@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 // Repository pour les biens immobiliers
 @Repository
@@ -15,4 +16,7 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
     List<Property> findByUserId(Long userId);
 
     Long countByUserId(Long id);
+
+    Optional<Property> findByIdAndUserId(Long propertyId, Long userId);
+
 }

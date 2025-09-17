@@ -65,18 +65,16 @@ public class TenantMessageController {
         List<TenantMessageLog> messages = tenantMessageService.findByTenantId(tenantId, currentUser);
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
-    
+
 
     @GetMapping("/by-property/{propertyId}")
     public ResponseEntity<List<TenantMessageLog>> getMessagesByProperty(@PathVariable Long propertyId, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            // Retourne une réponse 401 si l'utilisateur n'est pas authentifié
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
         Object principal = authentication.getPrincipal();
         if (!(principal instanceof UserDetails)) {
-            // L'objet principal n'est pas du type attendu, retourne une erreur d'authentification
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
@@ -84,7 +82,6 @@ public class TenantMessageController {
         User currentUser = userService.findUserByEmail(userDetails.getUsername());
 
         if (currentUser == null) {
-            // L'utilisateur n'a pas été trouvé, potentiellement une session expirée ou un jeton invalide
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
