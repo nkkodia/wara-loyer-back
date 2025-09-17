@@ -102,11 +102,17 @@ public class PropertyService {
                 .orElse(false);
     }
 
+    // Dans PropertyService.java
+
     public List<PropertyWithRentalInfoDTO> findAllWithRentalInfo(User user) {
         List<Property> properties = propertyRepository.findByUserId(user.getId());
         List<PropertyWithRentalInfoDTO> dtoList = new ArrayList<>();
 
         for (Property property : properties) {
+            if (property.getUser().getId() == null || !property.getUser().getId().equals(user.getId())) {
+                continue;
+            }
+
             Optional<Rental> latestRental = rentalRepository.findTopByPropertyIdOrderByDueDateDesc(property.getId());
 
             PropertyWithRentalInfoDTO dto = new PropertyWithRentalInfoDTO();
@@ -114,15 +120,8 @@ public class PropertyService {
 
             if (latestRental.isPresent()) {
                 Rental rental = latestRental.get();
-
                 dto.setLastRentAmount(rental.getAmountDue());
-
-                // Vérifier si la date de paiement existe. Si non, utiliser la date d'échéance.
-                if (rental.getPaymentDate() != null) {
-                    dto.setLastPaymentDate(rental.getPaymentDate());
-                } else {
-                    dto.setLastPaymentDate(rental.getDueDate());
-                }
+                dto.setLastPaymentDate(rental.getPaymentDate() != null ? rental.getPaymentDate() : rental.getDueDate());
             }
 
             dtoList.add(dto);
