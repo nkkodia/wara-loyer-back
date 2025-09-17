@@ -107,16 +107,22 @@ public class PropertyService {
         List<PropertyWithRentalInfoDTO> dtoList = new ArrayList<>();
 
         for (Property property : properties) {
-            // Query the database to find the latest rental for this property
             Optional<Rental> latestRental = rentalRepository.findTopByPropertyIdOrderByDueDateDesc(property.getId());
 
             PropertyWithRentalInfoDTO dto = new PropertyWithRentalInfoDTO();
-            // Copy data from the property
             BeanUtils.copyProperties(property, dto);
 
             if (latestRental.isPresent()) {
-                dto.setLastRentAmount(latestRental.get().getAmountDue());
-                dto.setLastPaymentDate(latestRental.get().getPaymentDate());
+                Rental rental = latestRental.get();
+
+                dto.setLastRentAmount(rental.getAmountDue());
+
+                // Vérifier si la date de paiement existe. Si non, utiliser la date d'échéance.
+                if (rental.getPaymentDate() != null) {
+                    dto.setLastPaymentDate(rental.getPaymentDate());
+                } else {
+                    dto.setLastPaymentDate(rental.getDueDate());
+                }
             }
 
             dtoList.add(dto);
