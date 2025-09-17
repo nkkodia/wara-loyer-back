@@ -104,15 +104,12 @@ public class PropertyService {
 
     // Dans PropertyService.java
 
+    // Dans PropertyService.java
     public List<PropertyWithRentalInfoDTO> findAllWithRentalInfo(User user) {
         List<Property> properties = propertyRepository.findByUserId(user.getId());
         List<PropertyWithRentalInfoDTO> dtoList = new ArrayList<>();
 
         for (Property property : properties) {
-            if (property.getUser().getId() == null || !property.getUser().getId().equals(user.getId())) {
-                continue;
-            }
-
             Optional<Rental> latestRental = rentalRepository.findTopByPropertyIdOrderByDueDateDesc(property.getId());
 
             PropertyWithRentalInfoDTO dto = new PropertyWithRentalInfoDTO();
