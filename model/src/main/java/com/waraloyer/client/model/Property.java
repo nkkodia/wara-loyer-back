@@ -10,11 +10,9 @@ import java.math.BigDecimal;
 @Data
 public class Property {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // S'assure que l'ID est généré automatiquement
-    private Long id; // <-- Correction : le type est maintenant Long
-    @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;// S'assure que l'ID est généré automatiquement
+    private Long userId; // <-- Use the userId directly
     private String name;
     private String address;
     private String type;

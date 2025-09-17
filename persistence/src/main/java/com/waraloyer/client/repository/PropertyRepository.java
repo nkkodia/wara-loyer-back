@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface PropertyRepository extends JpaRepository<Property, Long> {
     // Nouvelle implémentation qui garantit qu'un utilisateur existe
-    @Query("SELECT p FROM Property p WHERE p.user.id = :userId")
-    List<Property> findByUserId(@Param("userId") Long userId);
+    List<Property> findByUserId(Long userId);
+
     Long countByUserId(Long id);
 }

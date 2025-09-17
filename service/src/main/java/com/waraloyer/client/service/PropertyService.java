@@ -34,8 +34,9 @@ public class PropertyService {
      * @param user L'utilisateur actuellement authentifié.
      * @return L'objet Property créé.
      */
+    // Dans create()
     public Property create(Property property, User user) {
-        property.setUser(user);
+        property.setUserId(user.getId()); // Nouvelle ligne
         return propertyRepository.save(property);
     }
 
@@ -43,10 +44,11 @@ public class PropertyService {
         return propertyRepository.findAll();
     }
 
+    // Dans findById()
     public Property findById(Long id, User currentUser) {
         return propertyRepository.findById(id)
                 .map(property -> {
-                    if (!property.getUser().getId().equals(currentUser.getId())) {
+                    if (property.getUserId() == null || !property.getUserId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Ce bien n'appartient pas à cet utilisateur.");
                     }
                     return property;
@@ -64,7 +66,7 @@ public class PropertyService {
     public Property update(Long id, Property propertyDetails, User currentUser) {
         return propertyRepository.findById(id)
                 .map(property -> {
-                    if (!property.getUser().getId().equals(currentUser.getId())) {
+                    if (!property.getId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                     }
 
@@ -84,7 +86,7 @@ public class PropertyService {
     public void delete(Long id, User currentUser) {
         propertyRepository.findById(id)
                 .ifPresent(property -> {
-                    if (!property.getUser().getId().equals(currentUser.getId())) {
+                    if (!property.getId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                     }
                     propertyRepository.deleteById(id);
@@ -98,7 +100,7 @@ public class PropertyService {
      */
     public boolean belongsToUser(Long propertyId, Long userId) {
         return propertyRepository.findById(propertyId)
-                .map(rental -> rental.getUser().getId().equals(userId))
+                .map(rental -> rental.getId().equals(userId))
                 .orElse(false);
     }
 
