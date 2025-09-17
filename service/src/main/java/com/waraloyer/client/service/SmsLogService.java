@@ -68,14 +68,21 @@ public class SmsLogService {
         smsLog.setSentDate(LocalDate.now());
 
         Optional<ClientConfig> clientConfigOptional = clientConfigService.getByUserId(user.getId());
+        if (clientConfigOptional.isEmpty()) {
+            // Handle case where client config is not found for the user
+            throw new IllegalStateException("Client configuration not found for user: " + user.getId());
+        }
+
+        ClientConfig clientConfig = clientConfigOptional.get();
         Integer monthlySmsLimit = user.getSubscription().getMonthlySmsLimit();
-        Integer messageCount = clientConfigOptional.get().getMessageCountThisMonth();
+        Integer messageCount = clientConfig.getMessageCountThisMonth();
+
         if (messageCount != null && monthlySmsLimit != null && messageCount >= monthlySmsLimit) {
             throw new MessageLimitExceededException("La limite de messages mensuelle a été atteinte.");
         }
+
         String fallbackMessage = "Le service de messagerie est temporairement indisponible. Veuillez contacter le propriétaire.";
 
-        ClientConfig clientConfig = clientConfigOptional.get();
         if ("RAPPEL".equals(type)) {
             fallbackMessage = clientConfig.getSmsReminderMessage();
         } else if ("RELANCE".equals(type)) {
@@ -83,20 +90,18 @@ public class SmsLogService {
         } else if ("RELANCE_URGENTE_URL".equals(type)) {
             fallbackMessage = "Rappel urgent : le loyer de {MONTANT} FCFA pour le bien situé au {ADRESSE_BIEN} est en retard. Merci de régulariser.";
         }
+
         try {
             Twilio.init(accountSid, authToken);
+            boolean messageSent = false;
 
+            // --- Logic for WhatsApp and fallback SMS ---
             if ("WHATSAPP_TEMPLATE".equals(type) || "RELANCE".equals(type) || "RAPPEL".equals(type) || "RELANCE_URGENTE_URL".equals(type)) {
                 try {
                     String templateName = getTemplateNameByType(type);
-
-                    Rental rental = rentalService.findById(rentalId, user).orElse(null);
-                    if (rental == null) {
-                        throw new IllegalArgumentException("Location non trouvée.");
-                    }
+                    Rental rental = rentalService.findById(rentalId, user).orElseThrow(() -> new IllegalArgumentException("Location non trouvée."));
 
                     Map<String, String> variables = new HashMap<>();
-
                     switch (type) {
                         case "RAPPEL" -> {
                             variables.put("1", rental.getTenant().getFirstName());
@@ -115,11 +120,11 @@ public class SmsLogService {
                         }
                     }
 
-                    MessageCreator creator = Message
-                            .creator(new com.twilio.type.PhoneNumber("whatsapp:" + to),
-                                    new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber),
-                                    templateName)
-                            .setContentVariables(new JSONObject(variables).toString());
+                    MessageCreator creator = Message.creator(
+                            new com.twilio.type.PhoneNumber("whatsapp:" + to),
+                            new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber),
+                            templateName
+                    ).setContentVariables(new JSONObject(variables).toString());
 
                     if (scheduleDate != null) {
                         ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
@@ -128,20 +133,16 @@ public class SmsLogService {
                     creator.create();
                     smsLog.setStatus("SENT_WHATSAPP");
                     smsLog.setMessage(templateName);
-                    String problemUrl = "https://wara-loyer.com/tenant-problem/" + rental.getId();
-                    Message.creator(
-                            new PhoneNumber("whatsapp:" + to),
-                            new PhoneNumber("whatsapp:" + fromPhoneNumber),
-                            problemUrl
-                    ).create();
+                    messageSent = true;
+
                 } catch (Exception whatsappException) {
                     logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
 
+                    // Fallback to SMS
                     MessageCreator creator1 = Message.creator(
                             new PhoneNumber(to),
-                            new PhoneNumber(fromPhoneNumber),
+                            fromAlphanumericId,
                             replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null))
-
                     );
                     if (scheduleDate != null) {
                         ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
@@ -149,17 +150,21 @@ public class SmsLogService {
                     }
                     creator1.create();
 
-                    String problemUrl = "https://wara-loyer.com/tenant-problem/" + rentalId;
+                    // Fallback for the problem URL
+                    String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
                     MessageCreator creator2 = Message.creator(
                             new PhoneNumber(to),
-                            new PhoneNumber(fromPhoneNumber),
+                            fromAlphanumericId,
                             problemUrl
                     );
                     creator2.create();
+
                     smsLog.setMessage(replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null)));
                     smsLog.setStatus("SENT_SMS");
+                    messageSent = true;
                 }
             } else {
+                // --- Logic for standard SMS ---
                 MessageCreator creator = Message.creator(
                         new PhoneNumber(to),
                         new PhoneNumber(fromPhoneNumber),
@@ -172,7 +177,15 @@ public class SmsLogService {
                 creator.create();
                 smsLog.setMessage(replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null)));
                 smsLog.setStatus("SENT_SMS");
+                messageSent = true;
             }
+
+            // Increment the message counter only if the message was successfully sent
+            if (messageSent) {
+                clientConfig.setMessageCountThisMonth(clientConfig.getMessageCountThisMonth() + 1);
+                clientConfigService.save(clientConfig, user); // Save the updated config
+            }
+
         } catch (Exception finalException) {
             smsLog.setStatus("FAILED");
             logger.error("Échec total de l'envoi de message de type '{}' au numéro {}: {}", type, to, finalException.getMessage());
@@ -190,15 +203,21 @@ public class SmsLogService {
         String newMessage = message
                 .replace("{{1}}", rental.getTenant().getFirstName())
                 .replace("{{2}}", rental.getProperty().getAddress());
+
         if (newMessage.contains("{{3}}") && rental.getDueDate() != null) {
             newMessage = newMessage.replace("{{3}}", rental.getDueDate().toString());
         }
+
         if (newMessage.contains("{MONTANT}") && rental.getAmountDue() != null) {
             newMessage = newMessage.replace("{MONTANT}", String.valueOf(rental.getAmountDue()));
         }
+
+        if (newMessage.contains("{ADRESSE_BIEN}")) {
+            newMessage = newMessage.replace("{ADRESSE_BIEN}", rental.getProperty().getAddress());
+        }
+
         return newMessage;
     }
-
     private String getTemplateNameByType(String type) {
         return switch (type) {
             case "RAPPEL" -> TEMPLATE_RAPPEL_NAME;

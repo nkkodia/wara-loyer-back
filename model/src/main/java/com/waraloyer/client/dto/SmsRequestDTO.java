@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 @Data
 public class SmsRequestDTO {
     private String toPhoneNumber;
-    private String messageBody;
     private String type;
     private LocalDateTime scheduleDate;
 }

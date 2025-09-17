@@ -84,4 +84,12 @@ public class TenantMessageController {
         List<TenantMessageLog> messages = tenantMessageService.findByTenantId(tenantId, currentUser);
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
+
+    @GetMapping("/by-property/{propertyId}")
+    public ResponseEntity<List<TenantMessageLog>> getMessagesByProperty(@PathVariable Long propertyId, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+        List<TenantMessageLog> messages = tenantMessageService.findByPropertyId(propertyId, currentUser);
+        return new ResponseEntity<>(messages, HttpStatus.OK);
+    }
 }

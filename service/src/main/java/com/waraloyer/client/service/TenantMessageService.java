@@ -18,12 +18,15 @@ public class TenantMessageService {
     private final TenantMessageLogRepository tenantMessageLogRepository;
     private final TenantRepository tenantRepository;
     private final RentalService rentalService;
+    private final PropertyService propertyService; // Assurez-vous d'avoir ce service
+
 
     @Autowired
-    public TenantMessageService(TenantMessageLogRepository tenantMessageLogRepository, TenantRepository tenantRepository, RentalService rentalService) {
+    public TenantMessageService(TenantMessageLogRepository tenantMessageLogRepository, TenantRepository tenantRepository, RentalService rentalService, PropertyService propertyService) {
         this.tenantMessageLogRepository = tenantMessageLogRepository;
         this.tenantRepository = tenantRepository;
         this.rentalService = rentalService;
+        this.propertyService = propertyService;
     }
 
     /**
@@ -70,5 +73,19 @@ public class TenantMessageService {
             throw new AccessDeniedException("Accès refusé. Ce loyer n'appartient pas à cet utilisateur.");
         }
         return tenantMessageLogRepository.findByRental_Id(rentalId);
+    }
+
+    /**
+     * Récupère les messages des locataires pour un bien spécifique,
+     * en vérifiant que le bien appartient à l'utilisateur actuel.
+     * @param propertyId L'ID de la propriété.
+     * @param user L'utilisateur authentifié.
+     * @return La liste des messages pour ce bien.
+     */
+    public List<TenantMessageLog> findByPropertyId(Long propertyId, User user) {
+        if (!propertyService.belongsToUser(propertyId, user.getId())) {
+            throw new AccessDeniedException("Accès refusé. Cette propriété n'appartient pas à cet utilisateur.");
+        }
+        return tenantMessageLogRepository.findByPropertyIdAndUserId(propertyId, user.getId());
     }
 }

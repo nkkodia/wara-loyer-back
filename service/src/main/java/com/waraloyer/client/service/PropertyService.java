@@ -83,4 +83,15 @@ public class PropertyService {
                     propertyRepository.deleteById(id);
                 });
     }
+    /**
+     * Vérifie si un bien appartient à un utilisateur spécifique.
+     * @param propertyId L'ID de la propriété à vérifier.
+     * @param userId L'ID de l'utilisateur.
+     * @return true si le bien appartient à l'utilisateur, sinon false.
+     */
+    public boolean belongsToUser(Long propertyId, Long userId) {
+        return propertyRepository.findById(propertyId)
+                .map(rental -> rental.getUser().getId().equals(userId))
+                .orElse(false);
+    }
 }
