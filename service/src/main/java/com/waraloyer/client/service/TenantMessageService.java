@@ -25,16 +25,6 @@ public class TenantMessageService {
         this.rentalService = rentalService;
     }
 
-
-    /**
-     * Récupère la liste des messages reçus par un utilisateur (bailleur).
-     * @param userId L'ID de l'utilisateur.
-     * @return La liste des messages.
-     */
-    public List<TenantMessageLog> getMessagesByUserId(Long userId) {
-        return tenantMessageLogRepository.findByUserId(userId);
-    }
-
     /**
      * Récupère les messages des locataires pour un bien spécifique,
      * en vérifiant que le bien appartient à l'utilisateur actuel.

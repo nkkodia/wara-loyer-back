@@ -37,19 +37,6 @@ public class TenantMessageController {
 
     }
 
-    @Operation(summary = "Lister les messages reçus (sécurisé)",
-            description = "Retourne la liste des messages reçus par l'utilisateur (bailleur) authentifié.")
-    @ApiResponse(responseCode = "200", description = "Liste des messages récupérée avec succès.")
-    @ApiResponse(responseCode = "401", description = "Accès non autorisé.")
-    @GetMapping("/my-messages")
-    public ResponseEntity<List<TenantMessageLog>> getMyMessages(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User currentUser = userService.findUserByEmail(userDetails.getUsername());
-
-        List<TenantMessageLog> messages = tenantMessageService.getMessagesByUserId(currentUser.getId());
-        return new ResponseEntity<>(messages, HttpStatus.OK);
-    }
-
     @GetMapping("/by-rental/{rentalId}")
     public ResponseEntity<List<TenantMessageLog>> getMessagesByRental(@PathVariable Long rentalId, Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
