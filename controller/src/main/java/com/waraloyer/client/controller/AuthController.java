@@ -73,8 +73,8 @@ public class AuthController {
             User userPrincipal = userService.findUserByEmail(userDetails.getUsername());
 
             // Vérifie si l'abonnement a expiré
-            if (!authService.isAccessValid(userPrincipal)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Votre abonnement a expiré.");
+            if (!authService.isAccessValid(userPrincipal) || !userPrincipal.isEnabled()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Votre compte est désactivé ou votre abonnement a expiré.");
             }
 
             SecurityContextHolder.getContext().setAuthentication(authentication);

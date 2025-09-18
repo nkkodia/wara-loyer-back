@@ -138,6 +138,7 @@ public class SmsLogService {
                     if (isScheduled) {
                         creator.setMessagingServiceSid(messagingServiceSid);
                         ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                        creator.setScheduleType(Message.ScheduleType.FIXED); // <-- Ajout de cette ligne
                         creator.setSendAt(zonedDateTime);
                     }
 
@@ -152,18 +153,26 @@ public class SmsLogService {
                     finalMessageBody = replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null));
 
                     MessageCreator smsCreator;
+                    String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
+
                     if (isScheduled) {
                         smsCreator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalMessageBody);
+                        smsCreator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
+                        smsCreator.setScheduleType(Message.ScheduleType.FIXED); 
+                        smsCreator.create();
+
+                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), messagingServiceSid, problemUrl);
+                        smsCreator2.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
+                        smsCreator2.setScheduleType(Message.ScheduleType.FIXED);
+                        smsCreator2.create();
                     } else {
                         smsCreator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalMessageBody);
-                    }
-                    if (isScheduled) {
-                        ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
-                        smsCreator.setSendAt(zonedDateTime);
-                    }
-                    smsCreator.create();
+                        smsCreator.create();
 
-                    String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
+                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), fromAlphanumericId, problemUrl);
+                        smsCreator2.create();
+                    }
+
                     finalMessageBody += " | URL: " + problemUrl;
                     smsLog.setStatus("SENT_SMS");
                 }

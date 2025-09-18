@@ -22,25 +22,21 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Méthode pour vérifier l'existence de l'e-mail pour un nouvel utilisateur
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("E-mail non reconnu."));
     }
 
-    // Méthode pour créer le mot de passe de l'utilisateur
     public User createPassword(UserCreatePasswordDTO dto) {
-        // 1. Chercher l'utilisateur par email
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé."));
 
-        // 2. Vérifier si le mot de passe a déjà été créé
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            throw new IllegalArgumentException("Mot de passe déjà créé.");
+        if (user.isEnabled()) {
+            throw new IllegalArgumentException("Le compte est déjà activé.");
         }
-
-        // 3. Encoder le mot de passe et sauvegarder
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setEnabled(true); // Active le compte après la création du mot de passe
+
         return userRepository.save(user);
     }
 

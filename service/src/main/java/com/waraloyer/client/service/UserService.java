@@ -42,8 +42,12 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Cet e-mail est déjà utilisé.");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setCreatedAt(LocalDateTime.now());
+        User newUser = new User();
+        newUser.setEmail(user.getEmail());
+        newUser.setFirstName(user.getFirstName());
+        newUser.setLastName(user.getLastName());
+        newUser.setPassword(passwordEncoder.encode("motDePasse"));
+        newUser.setEnabled(false);
 
         Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Erreur: Le rôle USER n'a pas été trouvé."));

@@ -39,6 +39,9 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
+    // Ajoutez cette ligne pour le suivi de l'état d'activation
+    private boolean enabled = false;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Pour un MVP, on peut retourner une liste vide ou un rôle par défaut
@@ -62,7 +65,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true; // L'utilisateur est toujours actif s'il est dans la base
+        return this.enabled;
     }
 
 }
