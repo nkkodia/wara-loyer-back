@@ -27,4 +27,4 @@ twilio:
   auth-token: ${TWILIO_AUTH_TOKEN}
   from-phone-number: ${TWILIO_PHONE_NUMBER}
   from-alphanumeric-id: WaraLoyer # Ajoutez cette nouvelle ligne
-
+  messaging-service-sid: MG9a049346e582b64c136147429a2f0af4
