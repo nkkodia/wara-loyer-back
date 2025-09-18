@@ -58,13 +58,5 @@ public class TenantMessageController {
         return new ResponseEntity<>(messages, HttpStatus.OK);
     }
 
-    @GetMapping("/by-tenant/{tenantId}")
-    public ResponseEntity<List<TenantMessageLog>> getMessagesByTenant(@PathVariable Long tenantId, Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User currentUser = userService.findUserByEmail(userDetails.getUsername());
-        List<TenantMessageLog> messages = tenantMessageService.findByTenantId(tenantId, currentUser);
-        return new ResponseEntity<>(messages, HttpStatus.OK);
-    }
-
 
 }

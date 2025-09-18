@@ -35,14 +35,6 @@ public class TenantMessageService {
         return tenantMessageLogRepository.findByUserId(userId);
     }
 
-    public List<TenantMessageLog> findByTenantId(Long tenantId, User currentUser) {
-        // Vérifie si le loyer associé au locataire appartient à l'utilisateur
-        if (!rentalService.tenantBelongsToUser(tenantId, currentUser.getId())) {
-            throw new AccessDeniedException("Accès refusé. Ce locataire n'appartient pas à cet utilisateur.");
-        }
-        return tenantMessageLogRepository.findByTenant_Id(tenantId);
-    }
-
     /**
      * Récupère les messages des locataires pour un bien spécifique,
      * en vérifiant que le bien appartient à l'utilisateur actuel.
