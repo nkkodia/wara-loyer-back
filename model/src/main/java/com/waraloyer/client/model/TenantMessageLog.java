@@ -21,19 +21,7 @@ public class TenantMessageLog {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id")
-    private Tenant tenant;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "property_id")
-    private Property property;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "rental_id") // <-- Ajoute cette relation
+    @JoinColumn(name = "rental_id")
     private Rental rental;
 
     @Column(nullable = false, columnDefinition = "TEXT")

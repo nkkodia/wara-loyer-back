@@ -18,6 +18,8 @@ public interface TenantMessageLogRepository extends JpaRepository<TenantMessageL
     List<TenantMessageLog> findByUserId(Long userId);
     List<TenantMessageLog> findByTenant_Id(Long tenantId);
     List<TenantMessageLog> findByRental_Id(Long rentalId);
+
+    List<TenantMessageLog> findByRental_Tenant_Id(Long tenantId);
     @Query("SELECT tml FROM TenantMessageLog tml WHERE tml.property.id = :propertyId AND tml.user.id = :userId")
     List<TenantMessageLog> findByPropertyIdAndUserId(@Param("propertyId") Long propertyId, @Param("userId") Long userId);
     List<TenantMessageLog> findByProperty_Id(Long propertyId);

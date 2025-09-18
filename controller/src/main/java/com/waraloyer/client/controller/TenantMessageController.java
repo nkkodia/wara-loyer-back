@@ -67,25 +67,4 @@ public class TenantMessageController {
     }
 
 
-    @GetMapping("/by-property/{propertyId}")
-    public ResponseEntity<List<TenantMessageLog>> getMessagesByProperty(@PathVariable Long propertyId, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof UserDetails)) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-
-        UserDetails userDetails = (UserDetails) principal;
-        User currentUser = userService.findUserByEmail(userDetails.getUsername());
-
-        if (currentUser == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
-
-        List<TenantMessageLog> messages = tenantMessageService.findByPropertyId(propertyId, currentUser);
-        return new ResponseEntity<>(messages, HttpStatus.OK);
-    }
 }

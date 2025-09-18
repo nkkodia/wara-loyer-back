@@ -16,39 +16,15 @@ import java.util.List;
 public class TenantMessageService {
 
     private final TenantMessageLogRepository tenantMessageLogRepository;
-    private final TenantRepository tenantRepository;
     private final RentalService rentalService;
-    private final PropertyService propertyService; // Assurez-vous d'avoir ce service
 
 
     @Autowired
-    public TenantMessageService(TenantMessageLogRepository tenantMessageLogRepository, TenantRepository tenantRepository, RentalService rentalService, PropertyService propertyService) {
+    public TenantMessageService(TenantMessageLogRepository tenantMessageLogRepository, RentalService rentalService ) {
         this.tenantMessageLogRepository = tenantMessageLogRepository;
-        this.tenantRepository = tenantRepository;
         this.rentalService = rentalService;
-        this.propertyService = propertyService;
     }
 
-    /**
-     * Permet à un locataire de signaler un problème. Cet endpoint est public.
-     * @param tenantId L'ID du locataire.
-     * @param message Le message du locataire.
-     * @return Le log du message sauvegardé.
-     */
-    public TenantMessageLog reportProblem(Long tenantId, String message) {
-        Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Locataire non trouvé."));
-
-        TenantMessageLog messageLog = new TenantMessageLog();
-        messageLog.setTenant(tenant);
-        messageLog.setUser(tenant.getUser()); // Associe le message au bailleur
-        messageLog.setProperty(tenant.getProperty()); // Associe le message au bien
-        messageLog.setMessage(message);
-        messageLog.setSentDate(Instant.now());
-        messageLog.setStatus("SENT"); // Le message est envoyé
-
-        return tenantMessageLogRepository.save(messageLog);
-    }
 
     /**
      * Récupère la liste des messages reçus par un utilisateur (bailleur).
@@ -67,25 +43,16 @@ public class TenantMessageService {
         return tenantMessageLogRepository.findByTenant_Id(tenantId);
     }
 
-    public List<TenantMessageLog> findByRentalId(Long rentalId, User currentUser) {
-        // Vérifie si le loyer appartient à l'utilisateur
-        if (!rentalService.belongsToUser(rentalId, currentUser.getId())) {
-            throw new AccessDeniedException("Accès refusé. Ce loyer n'appartient pas à cet utilisateur.");
-        }
-        return tenantMessageLogRepository.findByRental_Id(rentalId);
-    }
-
     /**
      * Récupère les messages des locataires pour un bien spécifique,
      * en vérifiant que le bien appartient à l'utilisateur actuel.
-     * @param propertyId L'ID de la propriété.
-     * @param user L'utilisateur authentifié.
      * @return La liste des messages pour ce bien.
      */
-    public List<TenantMessageLog> findByPropertyId(Long propertyId, User user) {
-        if (!propertyService.belongsToUser(propertyId, user.getId())) {
-            throw new AccessDeniedException("Accès refusé. Cette propriété n'appartient pas à cet utilisateur.");
+    public List<TenantMessageLog> findByRentalId(Long rentalId, User currentUser) {
+        if (!rentalService.belongsToUser(rentalId, currentUser.getId())) {
+            throw new AccessDeniedException("Accès refusé. Ce loyer n'appartient pas à cet utilisateur.");
         }
-        return tenantMessageLogRepository.findByProperty_Id(propertyId);
+        // Use the new repository method
+        return tenantMessageLogRepository.findByRental_Id(rentalId);
     }
 }

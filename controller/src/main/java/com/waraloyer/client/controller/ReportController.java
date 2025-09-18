@@ -27,16 +27,14 @@ public class ReportController {
         this.rentalRepository = rentalRepository;
     }
 
-        @PostMapping("/report-problem/{rentalId}")
+    @PostMapping("/report-problem/{rentalId}")
     public ResponseEntity<?> reportProblem(@PathVariable Long rentalId, @RequestBody TenantMessageDTO messageDto) {
         return rentalRepository.findById(rentalId)
                 .map(rental -> {
                     TenantMessageLog message = new TenantMessageLog();
-                    message.setTenant(rental.getTenant());
-                    message.setProperty(rental.getProperty());
+                    message.setRental(rental);
                     message.setMessage(messageDto.getMessageContent());
                     message.setSentDate(Instant.from(LocalDateTime.now().atZone(ZoneId.systemDefault())));
-
                     tenantMessageRepository.save(message);
                     return new ResponseEntity<>("Message enregistré", HttpStatus.CREATED);
                 })

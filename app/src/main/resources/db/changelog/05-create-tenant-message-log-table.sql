@@ -4,7 +4,5 @@ CREATE TABLE tenant_message_log (
                                     message TEXT NOT NULL,
                                     sent_date TIMESTAMP NOT NULL,
                                     status VARCHAR(50),
-                                    user_id BIGINT,
-                                    tenant_id BIGINT,
-                                    property_id BIGINT
+                                    rental_id BIGINT REFERENCES rental(id) -- Foreign key to the rental table
 );
