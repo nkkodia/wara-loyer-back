@@ -86,6 +86,6 @@ public class TenantMessageService {
         if (!propertyService.belongsToUser(propertyId, user.getId())) {
             throw new AccessDeniedException("Accès refusé. Cette propriété n'appartient pas à cet utilisateur.");
         }
-        return tenantMessageLogRepository.findByPropertyIdAndUserId(propertyId, user.getId());
+        return tenantMessageLogRepository.findByProperty_Id(propertyId);
     }
 }

@@ -49,7 +49,7 @@ public class SmsLogService {
     private final RentalService rentalService;
 
     private static final String TEMPLATE_RELANCE_NAME = "waraloyer_relance_v2";
-    private static final String TEMPLATE_RAPPEL_NAME = "waraloyer_rappel_v2";
+    private static final String TEMPLATE_RAPPEL_NAME = "waraloyer_rappel_simple";
     private static final String TEMPLATE_RELANCE_URGENTE = "waraloyer_relance_urgent_v2";
 
     @Autowired
