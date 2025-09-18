@@ -33,6 +33,7 @@ public class ReportController {
                 .map(rental -> {
                     TenantMessageLog message = new TenantMessageLog();
                     message.setRental(rental);
+                    message.setStatus(messageDto.getStatus());
                     message.setMessage(messageDto.getMessageContent());
                     message.setSentDate(Instant.from(LocalDateTime.now().atZone(ZoneId.systemDefault())));
                     tenantMessageRepository.save(message);
