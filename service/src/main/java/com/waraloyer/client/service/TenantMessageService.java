@@ -8,6 +8,7 @@ import com.waraloyer.client.repository.TenantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,6 +31,7 @@ public class TenantMessageService {
      * en vérifiant que le bien appartient à l'utilisateur actuel.
      * @return La liste des messages pour ce bien.
      */
+    @Transactional
     public List<TenantMessageLog> findByRentalId(Long rentalId, User currentUser) {
         if (!rentalService.belongsToUser(rentalId, currentUser.getId())) {
             throw new AccessDeniedException("Accès refusé. Ce loyer n'appartient pas à cet utilisateur.");
