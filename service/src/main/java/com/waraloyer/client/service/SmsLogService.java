@@ -92,12 +92,11 @@ public class SmsLogService {
         }
 
         String fallbackMessage = "Le service de messagerie est temporairement indisponible. Veuillez contacter le propriétaire.";
-
-        if (TYPE_RAPPEL.equals(type)) {
+        if ("RAPPEL".equals(type)) {
             fallbackMessage = clientConfig.getSmsReminderMessage();
-        } else if (TYPE_RELANCE.equals(type)) {
+        } else if ("RELANCE".equals(type)) {
             fallbackMessage = clientConfig.getSmsRelanceMessage();
-        } else if (TYPE_RELANCE_URGENTE.equals(type)) {
+        } else if ("RELANCE_URGENTE_URL".equals(type)) {
             fallbackMessage = "Rappel urgent : le loyer de {MONTANT} FCFA pour le bien situé au {ADRESSE_BIEN} est en retard. Merci de régulariser.";
         }
 
@@ -107,22 +106,22 @@ public class SmsLogService {
         try {
             Twilio.init(accountSid, authToken);
 
-            // Logique d'envoi WhatsApp avec repli SMS
-            if (type.equals(TYPE_RELANCE) || type.equals(TYPE_RAPPEL) || type.equals(TYPE_RELANCE_URGENTE)) {
+            // Tentative d'envoi via WhatsApp
+            if (type.equals("RELANCE") || type.equals("RAPPEL") || type.equals("RELANCE_URGENTE_URL")) {
                 try {
-                    String templateName = getTemplateNameByType(type);
+                    String templateSid = getTemplateSidByType(type);
                     Rental rental = rentalService.findById(rentalId, user).orElseThrow(() -> new IllegalArgumentException("Location non trouvée."));
 
                     Map<String, String> variables = new HashMap<>();
                     switch (type) {
-                        case TYPE_RAPPEL, TYPE_RELANCE -> {
+                        case "RAPPEL", "RELANCE" -> {
                             variables.put("1", rental.getTenant().getFirstName());
                             variables.put("2", rental.getProperty().getAddress());
-                            if (type.equals(TYPE_RAPPEL)) {
+                            if (type.equals("RAPPEL")) {
                                 variables.put("3", rental.getDueDate().toString());
                             }
                         }
-                        case TYPE_RELANCE_URGENTE -> {
+                        case "RELANCE_URGENTE_URL" -> {
                             variables.put("1", String.valueOf(rental.getAmountDue()));
                             variables.put("2", rental.getProperty().getAddress());
                             String problemUrl = "https://waraloyer.com/tenant-problem/" + rental.getId();
@@ -130,11 +129,11 @@ public class SmsLogService {
                         }
                     }
 
-                    String templateSid = getTemplateSidByType(type);
                     MessageCreator creator = Message
                             .creator(new com.twilio.type.PhoneNumber("whatsapp:" + to),
                                     new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber),
-                                    templateSid)
+                                    (String) null)
+                            .setContentSid(templateSid)
                             .setContentVariables(new JSONObject(variables).toString());
 
                     if (isScheduled) {
@@ -146,55 +145,62 @@ public class SmsLogService {
 
                     creator.create();
 
-                    finalMessageBody = templateName;
+                    finalMessageBody = templateSid;
                     smsLog.setStatus("SENT_WHATSAPP");
 
                 } catch (Exception whatsappException) {
                     logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
 
                     finalMessageBody = replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null));
-
-                    MessageCreator smsCreator;
                     String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
-
+                    MessageCreator smsCreator = Message.creator(
+                            new PhoneNumber(to),
+                            (isScheduled) ? messagingServiceSid : fromAlphanumericId,
+                            finalMessageBody
+                    );
                     if (isScheduled) {
-                        smsCreator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalMessageBody);
-                        smsCreator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
                         smsCreator.setScheduleType(Message.ScheduleType.FIXED);
-                        smsCreator.create();
-
-                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), messagingServiceSid, problemUrl);
-                        smsCreator2.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
-                        smsCreator2.setScheduleType(Message.ScheduleType.FIXED);
-                        smsCreator2.create();
-                    } else {
-                        smsCreator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalMessageBody);
-                        smsCreator.create();
-
-                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), fromAlphanumericId, problemUrl);
-                        smsCreator2.create();
+                        ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
+                        smsCreator.setSendAt(zonedDateTime);
                     }
+                    smsCreator.create();
+
+                    MessageCreator smsCreator2 = Message.creator(
+                            new PhoneNumber(to),
+                            (isScheduled) ? messagingServiceSid : fromAlphanumericId,
+                            problemUrl
+                    );
+                    if (isScheduled) {
+                        smsCreator2.setScheduleType(Message.ScheduleType.FIXED);
+                        ZonedDateTime zonedDateTime2 = scheduleDate.atZone(ZoneId.systemDefault());
+                        smsCreator2.setSendAt(zonedDateTime2);
+                    }
+                    smsCreator2.create();
 
                     finalMessageBody += " | URL: " + problemUrl;
                     smsLog.setStatus("SENT_SMS");
                 }
             } else {
                 finalMessageBody = replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null));
-                MessageCreator creator;
+
+                MessageCreator creator = Message.creator(
+                        new PhoneNumber(to),
+                        (isScheduled) ? messagingServiceSid : fromAlphanumericId,
+                        finalMessageBody
+                );
+
                 if (isScheduled) {
-                    creator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalMessageBody);
+                    creator.setScheduleType(Message.ScheduleType.FIXED);
                     ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
                     creator.setSendAt(zonedDateTime);
-                    creator.setScheduleType(Message.ScheduleType.FIXED);
-                } else {
-                    creator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalMessageBody);
                 }
                 creator.create();
+
                 smsLog.setStatus("SENT_SMS");
             }
 
             clientConfig.setMessageCountThisMonth(clientConfig.getMessageCountThisMonth() + 1);
-            clientConfigService.save(clientConfig, user);
+            clientConfigService.save(clientConfig,user);
 
         } catch (Exception finalException) {
             smsLog.setStatus("FAILED");
@@ -210,6 +216,7 @@ public class SmsLogService {
 
         return smsLogRepository.save(smsLog);
     }
+
     private String replacePlaceholders(String message, Rental rental) {
         if (rental == null) return message;
         String newMessage = message
