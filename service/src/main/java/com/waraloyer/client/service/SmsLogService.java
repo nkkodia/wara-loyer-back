@@ -132,8 +132,7 @@ public class SmsLogService {
                     MessageCreator creator = Message
                             .creator(new com.twilio.type.PhoneNumber("whatsapp:" + to),
                                     new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber),
-                                    (String) null)
-                            .setContentSid(templateSid)
+                                    templateSid)
                             .setContentVariables(new JSONObject(variables).toString());
 
                     if (isScheduled) {
