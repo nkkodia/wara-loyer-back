@@ -136,7 +136,7 @@ public class SmsLogService {
                             .setContentVariables(new JSONObject(variables).toString());
 
                     if (isScheduled) {
-                        creator.setMessagingServiceSid(messagingServiceSid);
+                        creator.setMessagingServiceSid("MG9a049346e582b64c136147429a2f0af4");
                         ZonedDateTime zonedDateTime = scheduleDate.atZone(ZoneId.systemDefault());
                         creator.setScheduleType(Message.ScheduleType.FIXED); // <-- Ajout de cette ligne
                         creator.setSendAt(zonedDateTime);
@@ -156,12 +156,12 @@ public class SmsLogService {
                     String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
 
                     if (isScheduled) {
-                        smsCreator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalMessageBody);
+                        smsCreator = Message.creator(new PhoneNumber(to), "MG9a049346e582b64c136147429a2f0af4", finalMessageBody);
                         smsCreator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
-                        smsCreator.setScheduleType(Message.ScheduleType.FIXED); 
+                        smsCreator.setScheduleType(Message.ScheduleType.FIXED);
                         smsCreator.create();
 
-                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), messagingServiceSid, problemUrl);
+                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), "MG9a049346e582b64c136147429a2f0af4", problemUrl);
                         smsCreator2.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
                         smsCreator2.setScheduleType(Message.ScheduleType.FIXED);
                         smsCreator2.create();
@@ -180,7 +180,7 @@ public class SmsLogService {
                 finalMessageBody = replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null));
                 MessageCreator creator;
                 if (isScheduled) {
-                    creator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalMessageBody);
+                    creator = Message.creator(new PhoneNumber(to), "MG9a049346e582b64c136147429a2f0af4", finalMessageBody);
                 } else {
                     creator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalMessageBody);
                 }
