@@ -130,17 +130,17 @@ public class SmsLogService {
 
                     MessageCreator creator;
                     if (isScheduled) {
-                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), messagingServiceSid, templateSid);
+                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), messagingServiceSid, getTemplateNameByType(type));
                         creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
                         creator.setScheduleType(Message.ScheduleType.FIXED);
                     } else {
-                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber), getTemplateNameByType(type));
+                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), messagingServiceSid,getTemplateNameByType(type));
                     }
                     creator.setContentSid(templateSid);
                     creator.setContentVariables(new JSONObject(variables).toString());
                     creator.create();
 
-                    finalMessageBody = templateSid;
+                    finalMessageBody = getTemplateNameByType(type);
                     smsLog.setStatus("SENT_WHATSAPP");
 
                 } catch (Exception whatsappException) {
