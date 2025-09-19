@@ -11,8 +11,8 @@ import java.math.BigDecimal;
 public class Property {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;// S'assure que l'ID est généré automatiquement
-    private Long userId; // <-- Use the userId directly
+    Long id;
+    private Long userId;
     private String name;
     private String address;
     private String type;

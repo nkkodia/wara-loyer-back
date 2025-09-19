@@ -37,18 +37,20 @@ public class TenantService {
     }
 
 
+    // Dans TenantService.java
+
     public Tenant create(TenantCreateDTO tenantDto, User user) {
         Tenant tenant = new Tenant();
         tenant.setFirstName(tenantDto.getFirstName());
         tenant.setLastName(tenantDto.getLastName());
         tenant.setPhoneNumber(tenantDto.getPhoneNumber());
         tenant.setRentStartDate(tenantDto.getRentStartDate());
-        tenant.setUser(user);
+        tenant.setUser(user); // Cette ligne reste valide si Tenant a une relation @ManyToOne avec User.
 
         if (tenantDto.getPropertyId() != null) {
             Property property = propertyRepository.findById(tenantDto.getPropertyId())
                     .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
-            if (!property.getId().equals(user.getId())) {
+            if (property.getUserId() == null || !property.getUserId().equals(user.getId())) {
                 throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
             }
             tenant.setProperty(property);
@@ -69,18 +71,17 @@ public class TenantService {
                     if (!tenant.getUser().getId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le locataire n'appartient pas à cet utilisateur.");
                     }
-
-                    // Mettre à jour les champs
                     tenant.setFirstName(tenantDetails.getFirstName());
                     tenant.setLastName(tenantDetails.getLastName());
                     tenant.setPhoneNumber(tenantDetails.getPhoneNumber());
                     tenant.setRentStartDate(tenantDetails.getRentStartDate());
 
-                    // Gérer l'association du bien via l'ID
                     if (tenantDetails.getPropertyId() != null) {
                         Property property = propertyRepository.findById(tenantDetails.getPropertyId())
                                 .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
-                        if (!property.getId().equals(currentUser.getId())) {
+
+                        // CORRECTION : Vérifier que le userId du bien correspond à l'ID de l'utilisateur courant
+                        if (property.getUserId() == null || !property.getUserId().equals(currentUser.getId())) {
                             throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                         }
                         tenant.setProperty(property);
