@@ -96,7 +96,7 @@ public class SmsLogService {
             fallbackMessage = clientConfig.getSmsReminderMessage();
         } else if ("RELANCE".equals(type)) {
             fallbackMessage = clientConfig.getSmsRelanceMessage();
-        } else if ("RELANCE_URGENTE_URL".equals(type)) {
+        } else if ("RELANCE_URGENTE".equals(type)) {
             fallbackMessage = "Rappel urgent : le loyer de {MONTANT} FCFA pour le bien situé au {ADRESSE_BIEN} est en retard. Merci de régulariser.";
         }
 
@@ -121,7 +121,7 @@ public class SmsLogService {
                                 variables.put("3", rental.getDueDate().toString());
                             }
                         }
-                        case "RELANCE_URGENTE_URL" -> {
+                        case "RELANCE_URGENTE" -> {
                             variables.put("1", String.valueOf(rental.getAmountDue()));
                             variables.put("2", rental.getProperty().getAddress());
                             String problemUrl = "https://waraloyer.com/tenant-problem/" + rental.getId();

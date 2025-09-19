@@ -92,10 +92,12 @@ public class PropertyService {
                     propertyRepository.deleteById(id);
                 });
     }
-    public boolean belongsToUser(Long propertyId, Long userId) {
-        return propertyRepository.findByIdAndUserId(propertyId, userId).isPresent();
-    }
 
+    public boolean belongsToUser(Long propertyId, Long userId) {
+        return propertyRepository.findById(propertyId)
+                .map(property -> property.getUserId() != null && property.getUserId().equals(userId))
+                .orElse(false);
+    }
     // Dans PropertyService.java
     public List<PropertyWithRentalInfoDTO> findAllWithRentalInfo(User user) {
         List<Property> properties = propertyRepository.findByUserId(user.getId());
