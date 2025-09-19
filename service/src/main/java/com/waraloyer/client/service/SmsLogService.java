@@ -106,8 +106,7 @@ public class SmsLogService {
         try {
             Twilio.init(accountSid, authToken);
 
-            // Tentative d'envoi via WhatsApp
-            if (type.equals("RELANCE") || type.equals("RAPPEL") || type.equals("RELANCE_URGENTE_URL")) {
+            if (type.equals("RELANCE") || type.equals("RAPPEL") || type.equals("RELANCE_URGENTE")) {
                 try {
                     String templateSid = getTemplateSidByType(type);
                     Rental rental = rentalService.findById(rentalId, user).orElseThrow(() -> new IllegalArgumentException("Location non trouvée."));
@@ -135,9 +134,9 @@ public class SmsLogService {
                         creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
                         creator.setScheduleType(Message.ScheduleType.FIXED);
                     } else {
-                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber), templateSid);
+                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber), getTemplateNameByType(type));
                     }
-
+                    creator.setContentSid(templateSid);
                     creator.setContentVariables(new JSONObject(variables).toString());
                     creator.create();
 
