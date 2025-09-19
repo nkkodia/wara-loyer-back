@@ -41,7 +41,6 @@ public class TenantService {
         Tenant tenant = new Tenant();
         tenant.setFirstName(tenantDto.getFirstName());
         tenant.setLastName(tenantDto.getLastName());
-        tenant.setEmail(tenantDto.getEmail());
         tenant.setPhoneNumber(tenantDto.getPhoneNumber());
         tenant.setRentStartDate(tenantDto.getRentStartDate());
         tenant.setUser(user);
@@ -74,7 +73,6 @@ public class TenantService {
                     // Mettre à jour les champs
                     tenant.setFirstName(tenantDetails.getFirstName());
                     tenant.setLastName(tenantDetails.getLastName());
-                    tenant.setEmail(tenantDetails.getEmail());
                     tenant.setPhoneNumber(tenantDetails.getPhoneNumber());
                     tenant.setRentStartDate(tenantDetails.getRentStartDate());
 

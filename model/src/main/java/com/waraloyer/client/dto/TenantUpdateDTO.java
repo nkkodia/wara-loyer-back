@@ -9,7 +9,6 @@ public class TenantUpdateDTO {
     private Long id;
     private String firstName;
     private String lastName;
-    private String email;
     private String phoneNumber;
     private LocalDate rentStartDate;
     private Long propertyId;

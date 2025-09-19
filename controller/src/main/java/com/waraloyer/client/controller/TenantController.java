@@ -41,7 +41,6 @@ public class TenantController {
         return new ResponseEntity<>(newTenant, HttpStatus.CREATED);
     }
 
-    // READ - Lister tous les locataires pour l'utilisateur authentifié
     @GetMapping("/my-tenants")
     public ResponseEntity<List<Tenant>> getMyTenants(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
