@@ -200,7 +200,7 @@ public class RentalService {
 
     // Cette méthode sera exécutée une seule fois au démarrage de l'application
     // Il est recommandé de la commenter ou de la supprimer après exécution
-    @PostConstruct
+   /* @PostConstruct
     public void createInitialRentalsForExistingTenants() {
         List<Tenant> tenantsWithoutRental = tenantRepository.findAll().stream()
                 .filter(tenant -> rentalRepository.findByTenant(tenant).isEmpty() && tenant.getProperty() != null)
@@ -221,5 +221,5 @@ public class RentalService {
                 create(initialRental, tenant.getUser());
             }
         }
-    }
+    }*/
 }
