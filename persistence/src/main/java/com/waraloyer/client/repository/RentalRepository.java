@@ -1,6 +1,7 @@
 package com.waraloyer.client.repository;
 
 import com.waraloyer.client.model.Rental;
+import com.waraloyer.client.model.Tenant;
 import io.micrometer.observation.ObservationFilter;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -28,7 +29,14 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
 
     Optional<Rental> findByTenantId(Long tenantId);
 
-    // Automatically generated query to find the single most recent rental for a property.
     Optional<Rental> findTopByPropertyIdOrderByDueDateDesc(Long propertyId);
+    /**
+     * Recherche tous les loyers associés à un locataire donné.
+     * @param tenant Le locataire.
+     * @return Une liste de loyers.
+     */
+    List<Rental> findByTenant(Tenant tenant);
+
+
 
 }

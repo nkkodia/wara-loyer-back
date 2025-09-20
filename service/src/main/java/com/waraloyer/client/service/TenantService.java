@@ -3,9 +3,11 @@ package com.waraloyer.client.service;
 import com.waraloyer.client.dto.TenantCreateDTO;
 import com.waraloyer.client.dto.TenantUpdateDTO;
 import com.waraloyer.client.model.Property;
+import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.Tenant;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.PropertyRepository;
+import com.waraloyer.client.repository.RentalRepository;
 import com.waraloyer.client.repository.TenantRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +22,14 @@ public class TenantService {
 
     private final TenantRepository tenantRepository;
     private final PropertyRepository propertyRepository;
+    private final RentalService rentalService;
 
 
     @Autowired
-    public TenantService(TenantRepository tenantRepository, PropertyRepository propertyRepository) {
+    public TenantService(TenantRepository tenantRepository, PropertyRepository propertyRepository, RentalService rentalService) {
         this.tenantRepository = tenantRepository;
         this.propertyRepository = propertyRepository;
+        this.rentalService = rentalService;
     }
 
     public List<Tenant> findByUserId(Long userId) {
@@ -37,15 +41,13 @@ public class TenantService {
     }
 
 
-    // Dans TenantService.java
-
     public Tenant create(TenantCreateDTO tenantDto, User user) {
         Tenant tenant = new Tenant();
         tenant.setFirstName(tenantDto.getFirstName());
         tenant.setLastName(tenantDto.getLastName());
         tenant.setPhoneNumber(tenantDto.getPhoneNumber());
         tenant.setRentStartDate(tenantDto.getRentStartDate());
-        tenant.setUser(user); // Cette ligne reste valide si Tenant a une relation @ManyToOne avec User.
+        tenant.setUser(user);
 
         if (tenantDto.getPropertyId() != null) {
             Property property = propertyRepository.findById(tenantDto.getPropertyId())
@@ -58,7 +60,18 @@ public class TenantService {
             tenant.setProperty(null);
         }
 
-        return tenantRepository.save(tenant);
+        Tenant savedTenant = tenantRepository.save(tenant);
+
+        Rental initialRental = new Rental();
+        initialRental.setDueDate(savedTenant.getRentStartDate());
+        initialRental.setAmountDue(savedTenant.getProperty().getRentAmount());
+        initialRental.setStatus("Due");
+        initialRental.setTenant(savedTenant);
+        initialRental.setProperty(savedTenant.getProperty());
+        initialRental.setUser(user);
+
+        rentalService.create(initialRental, user);
+        return savedTenant;
     }
 
     public List<Tenant> findAll() {
@@ -71,16 +84,18 @@ public class TenantService {
                     if (!tenant.getUser().getId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le locataire n'appartient pas à cet utilisateur.");
                     }
+                    Long oldPropertyId = tenant.getProperty() != null ? tenant.getProperty().getId() : null;
+
                     tenant.setFirstName(tenantDetails.getFirstName());
                     tenant.setLastName(tenantDetails.getLastName());
                     tenant.setPhoneNumber(tenantDetails.getPhoneNumber());
                     tenant.setRentStartDate(tenantDetails.getRentStartDate());
 
+                    // Gérer l'association du bien
                     if (tenantDetails.getPropertyId() != null) {
                         Property property = propertyRepository.findById(tenantDetails.getPropertyId())
                                 .orElseThrow(() -> new EntityNotFoundException("Bien non trouvé."));
 
-                        // CORRECTION : Vérifier que le userId du bien correspond à l'ID de l'utilisateur courant
                         if (property.getUserId() == null || !property.getUserId().equals(currentUser.getId())) {
                             throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                         }
@@ -88,8 +103,21 @@ public class TenantService {
                     } else {
                         tenant.setProperty(null);
                     }
+                    Tenant updatedTenant = tenantRepository.save(tenant);
 
-                    return tenantRepository.save(tenant);
+                    if (updatedTenant.getProperty() != null && !updatedTenant.getProperty().getId().equals(oldPropertyId)) {
+                        // Créez le loyer initial
+                        Rental initialRental = new Rental();
+                        initialRental.setDueDate(updatedTenant.getRentStartDate());
+                        initialRental.setAmountDue(updatedTenant.getProperty().getRentAmount());
+                        initialRental.setStatus("Due");
+                        initialRental.setTenant(updatedTenant);
+                        initialRental.setProperty(updatedTenant.getProperty());
+                        initialRental.setUser(currentUser);
+
+                        rentalService.create(initialRental, currentUser);
+                    }
+                    return updatedTenant;
                 })
                 .orElseThrow(() -> new EntityNotFoundException("Locataire non trouvé."));
     }
@@ -102,4 +130,5 @@ public class TenantService {
             tenantRepository.deleteById(id);
         });
     }
+
 }

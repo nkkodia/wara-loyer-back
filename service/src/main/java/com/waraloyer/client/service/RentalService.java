@@ -1,10 +1,10 @@
 package com.waraloyer.client.service;
 
-import com.waraloyer.client.model.Rental;
-import com.waraloyer.client.model.SmsLog;
-import com.waraloyer.client.model.User;
+import com.waraloyer.client.model.*;
 import com.waraloyer.client.repository.RentalRepository;
 import com.waraloyer.client.repository.SmsLogRepository;
+import com.waraloyer.client.repository.TenantRepository;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class RentalService {
@@ -23,11 +24,13 @@ public class RentalService {
 
     private final RentalRepository rentalRepository;
     private final SmsLogRepository smsLogRepository;
+    private final TenantRepository tenantRepository;
 
     @Autowired
-    public RentalService(RentalRepository rentalRepository, SmsLogRepository smsLogRepository) {
+    public RentalService(RentalRepository rentalRepository, SmsLogRepository smsLogRepository, TenantRepository tenantRepository) {
         this.rentalRepository = rentalRepository;
         this.smsLogRepository = smsLogRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     /**
@@ -193,5 +196,30 @@ public class RentalService {
         return rentalRepository.findByTenantId(tenantId)
                 .map(rental -> rental.getUser().getId().equals(userId))
                 .orElse(false);
+    }
+
+    // Cette méthode sera exécutée une seule fois au démarrage de l'application
+    // Il est recommandé de la commenter ou de la supprimer après exécution
+    @PostConstruct
+    public void createInitialRentalsForExistingTenants() {
+        List<Tenant> tenantsWithoutRental = tenantRepository.findAll().stream()
+                .filter(tenant -> rentalRepository.findByTenant(tenant).isEmpty() && tenant.getProperty() != null)
+                .toList();
+
+        for (Tenant tenant : tenantsWithoutRental) {
+            Property property = tenant.getProperty();
+            if (property != null) {
+                Rental initialRental = new Rental();
+                initialRental.setDueDate(tenant.getRentStartDate());
+                initialRental.setAmountDue(property.getRentAmount());
+                initialRental.setStatus("Due");
+                initialRental.setTenant(tenant);
+                initialRental.setProperty(property);
+                initialRental.setUser(tenant.getUser()); // Assurez-vous que l'entité Tenant a une référence à l'User
+
+                // Sauvegarder le nouveau loyer
+                create(initialRental, tenant.getUser());
+            }
+        }
     }
 }
