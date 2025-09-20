@@ -33,6 +33,7 @@ public class Tenant {
     @Transient
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Long propertyId;
+    private boolean enabled = true; // Par défaut, un nouveau locataire est actif
 
     // Le setter est nécessaire pour que Jackson puisse mapper le JSON
     public void setPropertyId(Long propertyId) {
