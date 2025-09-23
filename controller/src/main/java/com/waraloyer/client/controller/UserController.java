@@ -47,17 +47,5 @@ public class UserController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
-    @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody PasswordUpdateDTO dto, Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        User user = userService.findUserByEmail(userDetails.getUsername());
-
-        try {
-            userService.updatePassword(user.getId(), dto);
-            return ResponseEntity.ok("Mot de passe mis à jour avec succès.");
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(403).body(e.getMessage());
-        }
-    }
 
 }

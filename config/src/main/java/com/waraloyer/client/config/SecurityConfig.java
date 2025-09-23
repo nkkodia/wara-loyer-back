@@ -46,7 +46,7 @@ public class SecurityConfig {
                                 "/api/reporting/report-problem/**",
                                 "/api/auth/create-password"
                         ).permitAll()
-                        .requestMatchers("/api/management/subscription").authenticated()
+                        .requestMatchers("/api/management/**").authenticated()
                         .requestMatchers("/api/tenant-messages/**").authenticated()
                         .requestMatchers("/api/properties/**","/api/dashboard/**", "/api/rentals/**", "/api/tenants/**",
                                 "/api/config/**", "/api/reports/**", "/api/sms/**"
