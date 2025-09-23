@@ -51,7 +51,7 @@ public class SubscriptionController {
             userService.updatePassword(user.getId(), dto);
             return ResponseEntity.ok("Mot de passe mis à jour avec succès.");
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(403).body(e.getMessage());
+            return ResponseEntity.status(400).body(e.getMessage());
         }
     }
 }
