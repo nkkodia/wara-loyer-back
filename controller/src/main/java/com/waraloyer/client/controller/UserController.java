@@ -1,5 +1,6 @@
 package com.waraloyer.client.controller;
 
+import com.waraloyer.client.dto.PasswordUpdateDTO;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,6 +9,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,6 +45,19 @@ public class UserController {
     public ResponseEntity<List<User>> listAllUsers() {
         List<User> users = userService.findAllUsers();
         return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody PasswordUpdateDTO dto, Authentication authentication) {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User user = userService.findUserByEmail(userDetails.getUsername());
+
+        try {
+            userService.updatePassword(user.getId(), dto);
+            return ResponseEntity.ok("Mot de passe mis à jour avec succès.");
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
     }
 
 }

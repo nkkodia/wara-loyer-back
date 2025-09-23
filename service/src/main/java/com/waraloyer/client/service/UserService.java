@@ -1,10 +1,13 @@
 package com.waraloyer.client.service;
 
+import com.waraloyer.client.dto.PasswordUpdateDTO;
 import com.waraloyer.client.model.Role;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.model.enums.ERole;
 import com.waraloyer.client.repository.UserRepository;
 import com.waraloyer.client.repository.RoleRepository;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,5 +88,20 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
 
     public List<User> findAllUsers() {
         return userRepository.findAll();
+    }
+    public User updatePassword(Long userId, PasswordUpdateDTO dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé."));
+
+        // 1. Vérifier si l'ancien mot de passe est correct
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new AccessDeniedException("Ancien mot de passe incorrect.");
+        }
+
+        // 2. Mettre à jour le mot de passe avec le nouveau haché
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+
+        // 3. Sauvegarder l'utilisateur mis à jour
+        return userRepository.save(user);
     }
 }
