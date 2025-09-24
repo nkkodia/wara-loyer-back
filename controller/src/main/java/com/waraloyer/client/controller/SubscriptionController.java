@@ -49,9 +49,22 @@ public class SubscriptionController {
 
         try {
             userService.updatePassword(user.getId(), dto);
-            return ResponseEntity.ok("Mot de passe mis à jour avec succès.");
+            return ResponseEntity.noContent().build();
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(400).body(e.getMessage());
+            ErrorResponse error = new ErrorResponse(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
+    }
+}
+class ErrorResponse {
+    private String message;
+    public ErrorResponse(String message) {
+        this.message = message;
+    }
+    public String getMessage() {
+        return message;
+    }
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
