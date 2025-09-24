@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -106,9 +107,19 @@ public class TenantService {
                     Tenant updatedTenant = tenantRepository.save(tenant);
 
                     if (updatedTenant.getProperty() != null && !updatedTenant.getProperty().getId().equals(oldPropertyId)) {
-                        // Créez le loyer initial
                         Rental initialRental = new Rental();
-                        initialRental.setDueDate(updatedTenant.getRentStartDate());
+                        LocalDate rentStartDate = updatedTenant.getRentStartDate();
+                        int paymentDay = updatedTenant.getProperty().getRentPaymentDate();
+
+                        LocalDate firstDueDate;
+                        if (rentStartDate.getDayOfMonth() > paymentDay) {
+                            // Si la date de début de location est après le jour de paiement, le loyer est dû le mois suivant
+                            firstDueDate = LocalDate.of(rentStartDate.getYear(), rentStartDate.getMonth(), paymentDay).plusMonths(1);
+                        } else {
+                            // Sinon, le loyer est dû le mois en cours
+                            firstDueDate = LocalDate.of(rentStartDate.getYear(), rentStartDate.getMonth(), paymentDay);
+                        }
+                        initialRental.setDueDate(firstDueDate);
                         initialRental.setAmountDue(updatedTenant.getProperty().getRentAmount());
                         initialRental.setStatus("Due");
                         initialRental.setTenant(updatedTenant);
