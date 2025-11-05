@@ -33,7 +33,7 @@ public class ReminderSchedulerService {
         this.tenantRepository = tenantRepository;
     }
 
-    @Scheduled(cron = "0 0 2 * * ?") // S'exécute tous les jours à 2h00 du matin
+    @Scheduled(cron = "0 0 2 * * ?")
     public void sendAutomatedRemindersAndRelances() {
         logger.info("Début de la tâche de planification des rappels et relances.");
 

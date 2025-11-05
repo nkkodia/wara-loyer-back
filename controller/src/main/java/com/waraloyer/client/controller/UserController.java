@@ -1,6 +1,5 @@
 package com.waraloyer.client.controller;
 
-import com.waraloyer.client.dto.PasswordUpdateDTO;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,9 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,6 +38,7 @@ public class UserController {
     @Operation(summary = "Liste tous les utilisateurs",
             description = "Retourne la liste complète de tous les utilisateurs enregistrés.")
     @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès.")
+    @PreAuthorize("hasRole('ROLE_ADMIN')") // <<< AJOUTEZ CETTE ANNOTATION
     @GetMapping("/users")
     public ResponseEntity<List<User>> listAllUsers() {
         List<User> users = userService.findAllUsers();

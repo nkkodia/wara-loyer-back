@@ -2,8 +2,10 @@ package com.waraloyer.client.service;
 
 import com.waraloyer.client.dto.PasswordUpdateDTO;
 import com.waraloyer.client.model.Role;
+import com.waraloyer.client.model.Subscription;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.model.enums.ERole;
+import com.waraloyer.client.repository.SubscriptionRepository;
 import com.waraloyer.client.repository.UserRepository;
 import com.waraloyer.client.repository.RoleRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -30,32 +32,54 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SubscriptionRepository subscriptionRepository; // <<<< DOIT ÊTRE INJECTÉ
 
     @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, SubscriptionRepository subscriptionRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
-    public void registerNewUser(User user) {
-        if (userRepository.existsByUsername(user.getUsername())) {
+    public void registerNewUser(User userFromRequest) {
+        if (Boolean.TRUE.equals(userRepository.existsByUsername(userFromRequest.getUsername()))) {
             throw new IllegalArgumentException("Le nom d'utilisateur est déjà utilisé.");
         }
-        if (userRepository.existsByEmail(user.getEmail())) {
+        if (Boolean.TRUE.equals(userRepository.existsByEmail(userFromRequest.getEmail()))) {
             throw new IllegalArgumentException("Cet e-mail est déjà utilisé.");
         }
+
+        // --- CRÉATION ET INITIALISATION DU NOUVEL UTILISATEUR ---
         User newUser = new User();
-        newUser.setEmail(user.getEmail());
-        newUser.setFirstName(user.getFirstName());
-        newUser.setLastName(user.getLastName());
+
+        // Transfert des propriétés
+        newUser.setUsername(userFromRequest.getUsername());
+        newUser.setEmail(userFromRequest.getEmail());
+        newUser.setFirstName(userFromRequest.getFirstName());
+        newUser.setLastName(userFromRequest.getLastName());
+
+        // Propriétés par défaut / Sécurité
         newUser.setPassword(passwordEncoder.encode("motDePasse"));
         newUser.setEnabled(false);
 
+
+        newUser.setSubscriptionEndDate(
+                LocalDateTime.now().plusYears(1).toLocalDate()
+        );
+        newUser.setCreatedAt(LocalDateTime.now());
+
+        Subscription defaultSubscription = subscriptionRepository.findByName("BASIC")
+                .orElseThrow(() -> new RuntimeException("Erreur: L'abonnement par défaut n'a pas été trouvé."));
+
+        newUser.setSubscription(defaultSubscription);
+
         Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Erreur: Le rôle USER n'a pas été trouvé."));
-        user.getRoles().add(userRole);
-        userRepository.save(user);
+
+        newUser.getRoles().add(userRole);
+
+        userRepository.save(newUser);
     }
 
     public User findByUsername(String username) {
