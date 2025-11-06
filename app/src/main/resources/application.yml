@@ -5,8 +5,8 @@ spring:
   mail:
     host: smtp.gmail.com  # Le serveur SMTP de votre fournisseur
     port: 587                      # 587 (TLS) ou 465 (SSL)
-    username: marykodia1045@gmail.com
-    password: nnfmohtqetlfplbc
+    username: waraloyer@gmail.com
+    password: uvrlsvovsunqydwi
     properties:
       mail:
         smtp:

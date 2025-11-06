@@ -76,7 +76,7 @@ public class AuthService {
         tokenRepository.save(resetToken);
 
         // 5. Envoyer le lien (Simulation ici)
-        String resetLink = "FRONTEND_URL/reset-password?token=" + token;
+        String resetLink = "waraloyer.com/reset-password?token=" + token;
         emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
     }
 
