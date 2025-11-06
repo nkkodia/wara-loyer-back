@@ -1,6 +1,8 @@
 package com.waraloyer.client.controller;
 
 import com.waraloyer.client.config.JwtUtils;
+import com.waraloyer.client.dto.PasswordResetDTO;
+import com.waraloyer.client.dto.PasswordResetRequestDTO;
 import com.waraloyer.client.dto.UserCreatePasswordDTO;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.service.AuthService;
@@ -87,6 +89,35 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Demande de mot de passe oublié",
+            description = "Génère et envoie un jeton de réinitialisation à l'email de l'utilisateur.")
+    @ApiResponse(responseCode = "200", description = "Jeton envoyé (ou simulé) avec succès.")
+    @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé.")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody PasswordResetRequestDTO request) {
+        try {
+            authService.createPasswordResetToken(request.getEmail());
+            // Note: Il est recommandé de toujours renvoyer 200 OK pour ne pas divulguer
+            // l'existence d'un email dans la base.
+            return ResponseEntity.ok("Si l'utilisateur existe, un lien de réinitialisation a été envoyé.");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.ok("Si l'utilisateur existe, un lien de réinitialisation a été envoyé.");
+        }
+    }
+
+    @Operation(summary = "Réinitialisation effective du mot de passe",
+            description = "Valide le jeton et met à jour le mot de passe de l'utilisateur.")
+    @ApiResponse(responseCode = "200", description = "Mot de passe réinitialisé avec succès.")
+    @ApiResponse(responseCode = "400", description = "Jeton invalide ou expiré.")
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody PasswordResetDTO request) {
+        try {
+            authService.resetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok("Mot de passe réinitialisé avec succès.");
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>("Lien invalide ou expiré.", HttpStatus.BAD_REQUEST);
+        }
+    }
     static class JwtResponse {
         private String token;
 

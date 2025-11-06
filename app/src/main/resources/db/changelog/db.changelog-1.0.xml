@@ -16,6 +16,6 @@
     <include file="db/changelog/10-add-subscription-to-user.sql" relativeToChangelogFile="false"/>
     <include file="/db/changelog/12-create-tenant-message-log-table.sql" relativeToChangelogFile="false"/>
     <include file="/db/changelog/14-add-enabled-column-to-tenant-table.sql" relativeToChangelogFile="false"/>
-
+    <include file="db/changelog/15-create-password-reset-token-table.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

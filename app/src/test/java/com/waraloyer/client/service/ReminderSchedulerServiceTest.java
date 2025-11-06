@@ -45,7 +45,6 @@ class ReminderSchedulerServiceTest {
 
     @BeforeEach
     void setup() {
-        // --- 1. Configurer l'utilisateur et la configuration de base ---
         mockUser = new User();
         mockUser.setId(MOCK_USER_ID);
         mockUser.setEmail("scheduler@test.com");

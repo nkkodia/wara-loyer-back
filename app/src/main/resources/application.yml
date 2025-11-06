@@ -2,3 +2,14 @@
 spring:
   profiles:
     active: prod
+  mail:
+    host: smtp.gmail.com  # Le serveur SMTP de votre fournisseur
+    port: 587                      # 587 (TLS) ou 465 (SSL)
+    username: marykodia1045@gmail.com
+    password: nnfmohtqetlfplbc
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
