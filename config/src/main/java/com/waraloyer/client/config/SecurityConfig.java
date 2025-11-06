@@ -46,7 +46,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/",
                                 "/api/reporting/report-problem/**",
-                                "/api/auth/create-password"
+                                "/api/auth/create-password",
+                                "/api/auth/reset-password",
+                                "/api/auth/forgot-password"
                         ).permitAll()
                         .requestMatchers("/api/management/subscription").authenticated()
                         .requestMatchers("/api/management/change-password").authenticated()

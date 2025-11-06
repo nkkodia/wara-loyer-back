@@ -17,7 +17,7 @@ public class EmailService {
     // Injecter l'adresse e-mail de l'expéditeur à partir de la configuration (application.yml)
     @Value("${spring.mail.username}") // <-- NOUVELLE INJECTION
     private String fromEmail;
-    
+
     // Nécessaire pour envoyer des e-mails (doit être configuré dans application.properties)
     private final JavaMailSender mailSender;
 
