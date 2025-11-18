@@ -62,11 +62,12 @@ public class PropertyService {
     }
 
 
-    // Modifie update pour qu'il reçoive l'utilisateur
     public Property update(Long id, Property propertyDetails, User currentUser) {
         return propertyRepository.findById(id)
                 .map(property -> {
-                    if (!property.getId().equals(currentUser.getId())) {
+                    // CORRECTION CLÉ : On compare l'ID du propriétaire de la propriété
+                    // à l'ID de l'utilisateur courant.
+                    if (!property.getUserId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                     }
 
@@ -86,7 +87,7 @@ public class PropertyService {
     public void delete(Long id, User currentUser) {
         propertyRepository.findById(id)
                 .ifPresent(property -> {
-                    if (!property.getId().equals(currentUser.getId())) {
+                    if (!property.getUserId().equals(currentUser.getId())) {
                         throw new AccessDeniedException("Accès refusé. Le bien n'appartient pas à cet utilisateur.");
                     }
                     propertyRepository.deleteById(id);
