@@ -3,6 +3,8 @@ package com.waraloyer.client.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -24,6 +26,10 @@ public class Tenant {
     private String email;
     private String phoneNumber;
     private LocalDate rentStartDate;
+
+    // NOUVEAU : La suppression d'un Tenant supprime ses Rentals associés
+    @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Rental> rentals;
 
     @ManyToOne
     @JoinColumn(name = "property_id", referencedColumnName = "id")

@@ -112,12 +112,12 @@ public class TenantService {
                         int paymentDay = updatedTenant.getProperty().getRentPaymentDate();
 
                         LocalDate firstDueDate;
-                        if (rentStartDate.getDayOfMonth() > paymentDay) {
+                        if (rentStartDate.getDayOfMonth() >= paymentDay) {
                             // Si la date de début de location est après le jour de paiement, le loyer est dû le mois suivant
-                            firstDueDate = LocalDate.of(rentStartDate.getYear(), rentStartDate.getMonth(), paymentDay).plusMonths(1);
+                            firstDueDate = LocalDate.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), paymentDay).plusMonths(1);
                         } else {
                             // Sinon, le loyer est dû le mois en cours
-                            firstDueDate = LocalDate.of(rentStartDate.getYear(), rentStartDate.getMonth(), paymentDay);
+                            firstDueDate = LocalDate.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), paymentDay);
                         }
                         initialRental.setDueDate(firstDueDate);
                         initialRental.setAmountDue(updatedTenant.getProperty().getRentAmount());

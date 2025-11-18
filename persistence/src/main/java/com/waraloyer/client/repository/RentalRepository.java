@@ -37,6 +37,7 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
      */
     List<Rental> findByTenant(Tenant tenant);
 
-
+    List<Rental> findByStatusAndDueDateLessThanEqual(String status, LocalDate dueDate);
+    List<Rental> findByStatus(String status);
 
 }
