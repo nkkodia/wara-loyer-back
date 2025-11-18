@@ -22,12 +22,4 @@ public class Property {
     private String description;
     private Integer rentPaymentDate;
 
-    // NOUVEAU : La suppression d'une Property supprime ses Tenants associés
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tenant> tenants;
-
-    // NOUVEAU : La suppression d'une Property supprime ses Rentals associés
-    // (Ceci est nécessaire car Rental est directement lié à Property)
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Rental> rentals;
 }
