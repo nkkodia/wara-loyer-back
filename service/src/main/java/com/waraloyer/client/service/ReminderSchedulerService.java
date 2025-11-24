@@ -38,37 +38,59 @@ public class ReminderSchedulerService {
         logger.info("Début de la tâche de planification des rappels et relances.");
 
         List<ClientConfig> allConfigs = clientConfigService.findAll();
+        logger.debug("Nombre de configurations utilisateur trouvées: {}", allConfigs.size()); // Nouveau : Compte total
 
         for (ClientConfig config : allConfigs) {
             Long userId = config.getUser().getId();
             User user = config.getUser();
+            logger.info("Traitement de l'utilisateur ID: {} ({})", userId, user.getEmail()); // Nouveau : Utilisateur en cours
+
             List<Rental> userRentals = rentalService.findByUserId(userId);
+            logger.debug("Nombre de locations à vérifier pour l'utilisateur {}: {}", userId, userRentals.size()); // Nouveau : Locations trouvées
 
             for (Rental rental : userRentals) {
                 // Le loyer est-il pour le mois en cours et n'est-il pas payé ?
                 if (rental.getDueDate().getMonth().equals(LocalDate.now().getMonth()) && !rental.getStatus().equals("Paid")) {
+                    logger.debug("Vérification du loyer ID {} (Statut: {})", rental.getId(), rental.getStatus()); // Nouveau : Location traitée
 
                     // Logique pour le rappel
                     LocalDate reminderDate = rental.getDueDate().minusDays(config.getReminderDaysBefore());
                     if (LocalDate.now().isEqual(reminderDate) && !rental.isReminderSent()) {
+
+                        logger.info("ACTION: Envoi du RAPPEL pour le loyer ID {} (Date due: {})", rental.getId(), rental.getDueDate()); // Nouveau : Log d'action
+
                         smsLogService.sendSms(user, rental.getTenant().getPhoneNumber(), "RAPPEL", null, rental.getId());
                         rental.setReminderSent(true);
                         rental.setLastReminderSentDate(LocalDate.now());
                         rentalService.update(rental.getId(), rental, user);
+                        logger.debug("Rappel envoyé et marqueur 'isReminderSent' mis à jour pour loyer ID {}.", rental.getId()); // Nouveau : Log de mise à jour
+
+                    } else if (LocalDate.now().isEqual(reminderDate) && rental.isReminderSent()) {
+                        logger.debug("Skipping RAPPEL pour loyer ID {}: Déjà envoyé.", rental.getId()); // Nouveau : Log d'évitement
                     }
 
                     // Logique pour la relance
                     LocalDate relanceDate = rental.getDueDate().plusDays(config.getRelanceDaysAfter());
                     if (LocalDate.now().isEqual(relanceDate) && !rental.isRelanceSent()) {
+
+                        logger.info("ACTION: Envoi de la RELANCE pour le loyer ID {} (Date due: {})", rental.getId(), rental.getDueDate()); // Nouveau : Log d'action
+
                         smsLogService.sendSms(user, rental.getTenant().getPhoneNumber(), "RELANCE", null, rental.getId());
                         rental.setRelanceSent(true);
                         rental.setLastRelanceSentDate(LocalDate.now());
                         rentalService.update(rental.getId(), rental, user);
+                        logger.debug("Relance envoyée et marqueur 'isRelanceSent' mis à jour pour loyer ID {}.", rental.getId()); // Nouveau : Log de mise à jour
+
+                    } else if (LocalDate.now().isEqual(relanceDate) && rental.isRelanceSent()) {
+                        logger.debug("Skipping RELANCE pour loyer ID {}: Déjà envoyée.", rental.getId()); // Nouveau : Log d'évitement
                     }
+
+                } else {
+                    logger.debug("Ignoré loyer ID {}: Payé ou Date Due non dans le mois en cours.", rental.getId()); // Nouveau : Log d'évitement de la condition IF
                 }
             }
         }
-        logger.info("Fin de la tâche de planification des rappels et relances.");
+        logger.info("Fin de la tâche de planification des rappels et relances. Tous les utilisateurs ont été traités.");
     }
 
     @Scheduled(cron = "0 0 1 1 * ?") // S'exécute le 1er de chaque mois

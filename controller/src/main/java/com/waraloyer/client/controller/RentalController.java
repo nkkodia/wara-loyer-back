@@ -1,13 +1,17 @@
 package com.waraloyer.client.controller;
 
+import com.waraloyer.client.dto.NoticeGenerationRequestDTO;
 import com.waraloyer.client.dto.ReceiptRequestDTO;
 import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
+import com.waraloyer.client.service.NoticeService;
 import com.waraloyer.client.service.ReceiptService;
 import com.waraloyer.client.service.RentalService;
 import com.waraloyer.client.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,6 +24,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,12 +37,14 @@ public class RentalController {
     private final RentalService rentalService;
     private final UserService userService;
     private final ReceiptService receiptService;
+    private final NoticeService noticeService; // <-- Nouvelle dépendance
 
     @Autowired
-    public RentalController(RentalService rentalService, UserService userService, ReceiptService receiptService) {
+    public RentalController(RentalService rentalService, UserService userService, ReceiptService receiptService, NoticeService noticeService) {
         this.rentalService = rentalService;
         this.userService = userService;
         this.receiptService = receiptService;
+        this.noticeService = noticeService;
     }
 
     @Operation(summary = "Crée une nouvelle location",
@@ -160,6 +168,46 @@ public class RentalController {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Générer une Mise en Demeure (format DOCX)",
+            description = "Génère et télécharge une mise en demeure pour les loyers impayés sélectionnés.")
+    @ApiResponse(responseCode = "200", description = "Document généré et téléchargé avec succès.")
+    @ApiResponse(responseCode = "403", description = "Accès non autorisé.")
+    @ApiResponse(responseCode = "404", description = "Location ou Locataire non trouvé.")
+    @PostMapping("/generate-notice")
+    public ResponseEntity<Resource> generateNoticeToPay(
+            @RequestBody NoticeGenerationRequestDTO request,
+            Authentication authentication) {
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User currentUser = userService.findUserByEmail(userDetails.getUsername());
+
+        try {
+            // Appel au service pour générer le document DOCX
+            File generatedFile = noticeService.generateFormalNotice(request, currentUser);
+
+            // Configuration de la réponse HTTP pour le téléchargement
+            ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(generatedFile.toPath()));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + generatedFile.getName());
+
+            // Type de média pour les fichiers DOCX
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(generatedFile.length())
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                    .body(resource);
+
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (EntityNotFoundException | IllegalArgumentException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            // Gérer les exceptions Docx4j et IO (conversion, etc.)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

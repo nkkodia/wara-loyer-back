@@ -1,10 +1,12 @@
 package com.waraloyer.client.service;
 
 import com.waraloyer.client.dto.PasswordUpdateDTO;
+import com.waraloyer.client.model.ClientConfig;
 import com.waraloyer.client.model.Role;
 import com.waraloyer.client.model.Subscription;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.model.enums.ERole;
+import com.waraloyer.client.repository.ClientConfigRepository;
 import com.waraloyer.client.repository.SubscriptionRepository;
 import com.waraloyer.client.repository.UserRepository;
 import com.waraloyer.client.repository.RoleRepository;
@@ -27,16 +29,18 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class UserService implements UserDetailsService { // <-- Ajout de l'interface UserDetailsService
+public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final ClientConfigRepository clientConfigRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SubscriptionRepository subscriptionRepository; // <<<< DOIT ÊTRE INJECTÉ
+    private final SubscriptionRepository subscriptionRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, SubscriptionRepository subscriptionRepository) {
+    public UserService(UserRepository userRepository, ClientConfigRepository clientConfigRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, SubscriptionRepository subscriptionRepository) {
         this.userRepository = userRepository;
+        this.clientConfigRepository = clientConfigRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.subscriptionRepository = subscriptionRepository;
@@ -50,19 +54,15 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
             throw new IllegalArgumentException("Cet e-mail est déjà utilisé.");
         }
 
-        // --- CRÉATION ET INITIALISATION DU NOUVEL UTILISATEUR ---
         User newUser = new User();
 
-        // Transfert des propriétés
         newUser.setUsername(userFromRequest.getUsername());
         newUser.setEmail(userFromRequest.getEmail());
         newUser.setFirstName(userFromRequest.getFirstName());
         newUser.setLastName(userFromRequest.getLastName());
 
-        // Propriétés par défaut / Sécurité
         newUser.setPassword(passwordEncoder.encode("motDePasse"));
         newUser.setEnabled(false);
-
 
         newUser.setSubscriptionEndDate(
                 LocalDateTime.now().plusYears(1).toLocalDate()
@@ -78,8 +78,10 @@ public class UserService implements UserDetailsService { // <-- Ajout de l'inter
                 .orElseThrow(() -> new RuntimeException("Erreur: Le rôle USER n'a pas été trouvé."));
 
         newUser.getRoles().add(userRole);
-
         userRepository.save(newUser);
+
+        ClientConfig clientConfig = new ClientConfig(newUser, defaultSubscription);
+        clientConfigRepository.save(clientConfig);
     }
 
     public User findByUsername(String username) {
