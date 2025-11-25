@@ -13,3 +13,16 @@ spring:
           auth: true
           starttls:
             enable: true
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose les endpoints health, info, et metrics. '*' expose tout.
+        include: 'health, info, metrics, prometheus, mappings, loggers'
+  endpoint:
+    # Permet de voir les détails complets de l'état de santé
+    health:
+      show-details: always
+    # Configure l'endpoint Prometheus pour le scraping
+    prometheus:
+      enabled: true
