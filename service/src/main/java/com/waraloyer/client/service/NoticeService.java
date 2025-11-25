@@ -12,6 +12,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 public class NoticeService {
@@ -42,11 +44,17 @@ public class NoticeService {
             throw new IllegalArgumentException("La liste des échéances impayées est vide.");
         }
 
+        // 1. Récupérer la date du DTO (qui est maintenant un LocalDateTime)
+        LocalDateTime paymentDateTime = request.getPaymentDeadline();
+
+        // 2. Extraire la date pure (LocalDate) pour la logique ou le générateur
+        LocalDate paymentDateOnly = paymentDateTime.toLocalDate(); // <-- CORRECTION CLÉ
+
         // 3. Appel au générateur de document (l'implémentation Docx4j)
         return documentGenerator.generateMiseEnDemeure(
                 currentUser,
                 rental,
-                request.getPaymentDeadline(),
+                paymentDateOnly,
                 request.getInvoices()
         );
     }
