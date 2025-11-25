@@ -1,0 +1,15 @@
+# prometheus.yml (A déployer sur le serveur de monitoring)
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'wara-loyer-backend'
+    metrics_path: '/actuator/prometheus'
+
+    # Remplacer par l'URL publique de votre service Render
+    static_configs:
+      - targets: ['wara-loyer-back.onrender.com']
+        labels:
+          application: wara-loyer
+    # Si le service Render utilise HTTPS (ce qui est le cas), vous DEVEZ ajouter ceci:
+    scheme: https
