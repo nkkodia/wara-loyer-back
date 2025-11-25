@@ -50,6 +50,7 @@ public class SecurityConfig {
                                 "/api/auth/reset-password",
                                 "/api/auth/forgot-password"
                         ).permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/management/subscription").authenticated()
                         .requestMatchers("/api/management/change-password").authenticated()
                         .requestMatchers("/api/tenant-messages/**").authenticated()
