@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -17,7 +18,7 @@ public class NoticeGenerationRequestDTO {
     private Long rentalId;
 
     // La date limite de paiement souhaitée
-    private LocalDate paymentDeadline;
+    private LocalDateTime paymentDeadline;
 
     // Liste des échéances impayées à inclure dans le tableau du document
     private List<InvoiceSummaryDTO> invoices;
