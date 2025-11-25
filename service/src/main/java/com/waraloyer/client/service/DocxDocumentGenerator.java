@@ -9,6 +9,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -25,18 +26,15 @@ public class DocxDocumentGenerator implements DocumentGenerator {
             LocalDate paymentDeadline,
             List<InvoiceSummaryDTO> invoices
     ) throws Exception {
-        // NOTE: In a real application, the Docx4j logic (loading templates,
-        // replacing content, saving the file) would go here.
+        File tempFile = new File("mise-en-demeure_TEMP.txt");
+        FileWriter writer = new FileWriter(tempFile);
+        writer.write("DOCX Generation Test Successful.");
+        writer.close();
 
-        // For testing/development setup, we return a mock file instance.
-        // You'll need a placeholder file in the root of your project/module.
-        File templateFile = new ClassPathResource("templates/mise-en-demeure-modele.docx").getFile();
+        // Renommez-le en .docx pour satisfaire le Content-Type dans le contrôleur.
+        File mockDocx = new File("mise-en-demeure_MOCK.docx");
+        tempFile.renameTo(mockDocx);
 
-        // Ensure the mock file exists so the File.length() call doesn't fail later
-        if (!templateFile.exists()) {
-            templateFile.createNewFile();
-        }
-
-        return templateFile;
+        return mockDocx;
     }
 }
