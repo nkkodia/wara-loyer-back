@@ -51,7 +51,6 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password"
                         ).permitAll()
                         .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/management/**").permitAll()
                         .requestMatchers("/api/management/subscription").authenticated()
                         .requestMatchers("/api/management/change-password").authenticated()
                         .requestMatchers("/api/tenant-messages/**").authenticated()
