@@ -14,25 +14,18 @@ spring:
           starttls:
             enable: true
 management:
-  # 1. Définit le préfixe pour TOUS les endpoints Actuator
+  # 1. RETIRER LA LIGNE BASE-PATH. Les endpoints reviennent à /actuator
   endpoints:
     web:
-      base-path: /management # Rend l'accès à /management/prometheus
+      exposure:
+        include: prometheus, health # Incluez explicitement les endpoints
+      # RETIREZ base-path: /management
 
-  # 2. Expose les endpoints souhaités
+  # 2. Le reste est bon
   endpoint:
     health:
       show-details: always
       probes:
         enabled: true
-    # Activer l'endpoint prometheus (souvent implicite si la dépendance est présente, mais bonne pratique)
     prometheus:
       enabled: true
-    # Le paramètre pour l'exposition globale doit être ici (pour toutes les APIs)
-    web:
-      exposure:
-        include: prometheus, health # Incluez explicitement les endpoints
-
-# Les autres configurations, comme pour les accès, devraient rester correctes :
-#      access:
-#        default: read_only

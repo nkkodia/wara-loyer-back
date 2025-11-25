@@ -5,7 +5,7 @@ global:
 scrape_configs:
   - job_name: 'wara-loyer-backend'
     # ATTENTION : Correction du chemin pour correspondre au base-path de Spring Actuator
-    metrics_path: '/management/prometheus'
+    metrics_path: '/actuator/prometheus'
 
     static_configs:
       - targets: ['wara-loyer-back.onrender.com']
