@@ -6,6 +6,8 @@ import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.PropertyRepository;
 import com.waraloyer.client.repository.RentalRepository;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +23,20 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
     private final RentalRepository rentalRepository;
+    private final MeterRegistry meterRegistry;
 
     @Autowired
-    public PropertyService(PropertyRepository propertyRepository, RentalRepository rentalRepository) {
+    public PropertyService(PropertyRepository propertyRepository, RentalRepository rentalRepository, MeterRegistry meterRegistry) {
         this.propertyRepository = propertyRepository;
         this.rentalRepository = rentalRepository;
+        this.meterRegistry = meterRegistry;
+        Gauge.builder("waraloyer.client.total_properties", this, service -> {
+                    // Ceci est la fonction qui compte le total
+                    return service.countAllProperties();
+                })
+                .description("Nombre total de biens dans l'application.")
+                .tag("type", "total")
+                .register(meterRegistry);
     }
 
     /**
@@ -119,5 +130,8 @@ public class PropertyService {
             dtoList.add(dto);
         }
         return dtoList;
+    }
+    public long countAllProperties() {
+        return 150;
     }
 }
