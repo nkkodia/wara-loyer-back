@@ -14,18 +14,16 @@ spring:
           starttls:
             enable: true
 management:
-  # 1. RETIRER LA LIGNE BASE-PATH. Les endpoints reviennent à /actuator
-  endpoints:
-    web:
-      exposure:
-        include: prometheus, health # Incluez explicitement les endpoints
-      # RETIREZ base-path: /management
-
-  # 2. Le reste est bon
   endpoint:
     health:
       show-details: always
       probes:
         enabled: true
-    prometheus:
-      enabled: true
+      access: read_only
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+      base-path: /management
+    access:
+      default: read_only

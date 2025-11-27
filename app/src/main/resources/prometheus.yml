@@ -3,12 +3,8 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'wara-loyer-backend'
-    # ATTENTION : Correction du chemin pour correspondre au base-path de Spring Actuator
+  - job_name: 'spring-boot-application'
     metrics_path: '/actuator/prometheus'
-
+    scrape_interval: 15s # This can be adjusted based on our needs
     static_configs:
-      - targets: ['wara-loyer-back.onrender.com']
-        labels:
-          application: wara-loyer
-    scheme: https
+      - targets: ['localhost:8080']
