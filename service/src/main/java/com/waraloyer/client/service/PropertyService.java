@@ -6,6 +6,8 @@ import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.PropertyRepository;
 import com.waraloyer.client.repository.RentalRepository;
+import com.waraloyer.client.repository.SubscriptionRepository;
+import com.waraloyer.client.repository.UserRepository;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,22 +23,22 @@ import java.util.Optional;
 @Service
 public class PropertyService {
 
+    private static final int DEFAULT_MAX_LIMIT = 10;
+
     private final PropertyRepository propertyRepository;
     private final RentalRepository rentalRepository;
     private final MeterRegistry meterRegistry;
+    private final UserRepository userRepository;
+    private final SubscriptionRepository subscriptionRepository;
 
     @Autowired
-    public PropertyService(PropertyRepository propertyRepository, RentalRepository rentalRepository, MeterRegistry meterRegistry) {
+    public PropertyService(PropertyRepository propertyRepository, RentalRepository rentalRepository, MeterRegistry meterRegistry, UserRepository userRepository, SubscriptionRepository subscriptionRepository) {
         this.propertyRepository = propertyRepository;
         this.rentalRepository = rentalRepository;
         this.meterRegistry = meterRegistry;
-        Gauge.builder("waraloyer.client.total_properties", this, service -> {
-                    // Ceci est la fonction qui compte le total
-                    return service.countAllProperties();
-                })
-                .description("Nombre total de biens dans l'application.")
-                .tag("type", "total")
-                .register(meterRegistry);
+        this.userRepository = userRepository;
+        this.subscriptionRepository = subscriptionRepository;
+        registerUserLimitsGauges(meterRegistry);
     }
 
     /**
@@ -131,7 +133,20 @@ public class PropertyService {
         }
         return dtoList;
     }
-    public long countAllProperties() {
-        return 150;
+    public void registerUserLimitsGauges(MeterRegistry meterRegistry) {
+        List<User> users = userRepository.findAllByEnabledTrue();
+        for (User user : users) {
+            Long userId = user.getId();
+
+            int maxLimit = userRepository.findMaxPropertiesLimitByUserId(userId)
+                    .orElse(DEFAULT_MAX_LIMIT);
+            Gauge.builder("waraloyer.client.usage.properties", userId, id -> {
+                        return (double) propertyRepository.countByUserId(id);
+                    })
+                    .description("Nombre actuel de biens gérés par l'utilisateur.")
+                    .tag("user_id", userId.toString())
+                    .tag("max_limit", String.valueOf(maxLimit))
+                    .register(this.meterRegistry);
+        }
     }
 }

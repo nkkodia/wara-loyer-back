@@ -17,5 +17,7 @@ public class Subscription {
 
     private Integer monthlySmsLimit;
 
+    private Integer maxPropertiesLimit;
+
     private BigDecimal price;
 }

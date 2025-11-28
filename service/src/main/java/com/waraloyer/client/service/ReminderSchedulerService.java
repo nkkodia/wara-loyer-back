@@ -66,7 +66,7 @@ public class ReminderSchedulerService {
                         logger.debug("Rappel envoyé et marqueur 'isReminderSent' mis à jour pour loyer ID {}.", rental.getId()); // Nouveau : Log de mise à jour
 
                     } else if (LocalDate.now().isEqual(reminderDate) && rental.isReminderSent()) {
-                        logger.debug("Skipping RAPPEL pour loyer ID {}: Déjà envoyé.", rental.getId()); // Nouveau : Log d'évitement
+                        logger.debug("Skipping RAPPEL pour loyer ID {}: Déjà envoyé.", rental.getId());
                     }
 
                     // Logique pour la relance
