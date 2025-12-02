@@ -4,7 +4,6 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
 
-    <!-- Fichier de migration principal pour le projet WaraLoyer -->
     <include file="db/changelog/01-create-tables.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/02-add-defaults-to-rental-table.sql" relativeToChangelogFile="false"/>
     <include file="db/changelog/03-add-columns-to-sms-log.sql" relativeToChangelogFile="false"/>

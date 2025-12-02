@@ -198,28 +198,7 @@ public class RentalService {
                 .orElse(false);
     }
 
-    // Cette méthode sera exécutée une seule fois au démarrage de l'application
-    // Il est recommandé de la commenter ou de la supprimer après exécution
-   /* @PostConstruct
-    public void createInitialRentalsForExistingTenants() {
-        List<Tenant> tenantsWithoutRental = tenantRepository.findAll().stream()
-                .filter(tenant -> rentalRepository.findByTenant(tenant).isEmpty() && tenant.getProperty() != null)
-                .toList();
-
-        for (Tenant tenant : tenantsWithoutRental) {
-            Property property = tenant.getProperty();
-            if (property != null) {
-                Rental initialRental = new Rental();
-                initialRental.setDueDate(tenant.getRentStartDate());
-                initialRental.setAmountDue(property.getRentAmount());
-                initialRental.setStatus("Due");
-                initialRental.setTenant(tenant);
-                initialRental.setProperty(property);
-                initialRental.setUser(tenant.getUser()); // Assurez-vous que l'entité Tenant a une référence à l'User
-
-                // Sauvegarder le nouveau loyer
-                create(initialRental, tenant.getUser());
-            }
-        }
-    }*/
+    public List<Rental> findByUserIdAndStatusNot(Long userId, String status) {
+        return rentalRepository.findByUserIdAndStatusNot(userId, status);
+    }
 }

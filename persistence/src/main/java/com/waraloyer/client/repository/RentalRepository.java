@@ -2,6 +2,7 @@ package com.waraloyer.client.repository;
 
 import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.Tenant;
+import com.waraloyer.client.model.User;
 import io.micrometer.observation.ObservationFilter;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface RentalRepository extends JpaRepository<Rental, Long> {
@@ -40,4 +42,5 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
     List<Rental> findByStatusAndDueDateLessThanEqual(String status, LocalDate dueDate);
     List<Rental> findByStatus(String status);
 
+    List<Rental> findByUserIdAndStatusNot(Long userId, String status);
 }
