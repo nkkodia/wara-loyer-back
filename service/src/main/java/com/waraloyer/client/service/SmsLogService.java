@@ -64,11 +64,22 @@ public class SmsLogService {
     private static final String TEMPLATE_RELANCE_URGENTE_SID = "HX440074001e31f9dbc6dee8965e7e89b1";
 
     @Autowired
-    public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, ClientConfigService clientConfigService, RentalService rentalService ) {
+    public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, ClientConfigService clientConfigService, RentalService rentalService,
+                         @Value("${twilio.account-sid}") String accountSid,
+                         @Value("${twilio.auth-token}") String authToken,
+                         @Value("${twilio.from-phone-number}") String fromPhoneNumber,
+                         @Value("${twilio.from-alphanumeric-id:WaraLoyer}") String fromAlphanumericId,
+                         @Value("${twilio.messaging-service-sid}") String messagingServiceSid) {
         this.smsLogRepository = smsLogRepository;
         this.userService = userService;
         this.clientConfigService = clientConfigService;
         this.rentalService = rentalService;
+        // ➡️ INITIALISATION DES CHAMPS FINALS ⬅️
+        this.accountSid = accountSid;
+        this.authToken = authToken;
+        this.fromPhoneNumber = fromPhoneNumber;
+        this.fromAlphanumericId = fromAlphanumericId;
+        this.messagingServiceSid = messagingServiceSid;
     }
 
     /**
@@ -81,12 +92,8 @@ public class SmsLogService {
         smsLog.setType(type);
         smsLog.setSentDate(LocalDate.now());
 
-        // ➡️ CORRECTION 1: Initialisation des Twilio Objects DANS la méthode ⬅️
-        // Cela garantit que les @Value sont résolues.
-        Twilio.init(accountSid, authToken);
         final com.twilio.type.PhoneNumber whatsappFrom = new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber);
         final com.twilio.type.PhoneNumber smsFrom = new com.twilio.type.PhoneNumber(fromPhoneNumber);
-
 
         try {
             ClientConfig clientConfig = validateAndIncrementLimit(user);
