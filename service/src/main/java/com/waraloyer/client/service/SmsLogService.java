@@ -134,14 +134,22 @@ public class SmsLogService {
                         creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
                         creator.setScheduleType(Message.ScheduleType.FIXED);
                     } else {
-                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), messagingServiceSid,getTemplateNameByType(type));
+                        creator = Message.creator(
+                                new com.twilio.type.PhoneNumber("whatsapp:" + to),
+                                new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber),
+                                getTemplateNameByType(type)
+                        );
                     }
                     creator.setContentSid(templateSid);
                     creator.setContentVariables(new JSONObject(variables).toString());
                     creator.create();
 
-                    finalMessageBody = getTemplateNameByType(type);
+                    String templateBody = getTemplateNameByType(type); // Ou récupérez le corps du template
+                    // Utilisez votre fonction utilitaire
+
+                    finalMessageBody = replacePlaceholders(templateBody, rental);
                     smsLog.setStatus("SENT_WHATSAPP");
+
 
                 } catch (Exception whatsappException) {
                     logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());

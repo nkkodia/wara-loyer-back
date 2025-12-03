@@ -128,7 +128,6 @@ public class PropertyService {
                 dto.setLastRentAmount(rental.getAmountDue());
                 dto.setLastPaymentDate(rental.getPaymentDate() != null ? rental.getPaymentDate() : rental.getDueDate());
             }
-
             dtoList.add(dto);
         }
         return dtoList;
