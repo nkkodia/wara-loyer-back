@@ -10,6 +10,7 @@ import com.waraloyer.client.model.Rental;
 import com.waraloyer.client.model.SmsLog;
 import com.waraloyer.client.model.User;
 import com.waraloyer.client.repository.SmsLogRepository;
+import jakarta.annotation.PostConstruct;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,26 +31,21 @@ public class SmsLogService {
 
     private static final Logger logger = LoggerFactory.getLogger(SmsLogService.class);
 
-    @Value("${twilio.account-sid}")
-    private String accountSid;
-
-    @Value("${twilio.auth-token}")
-    private String authToken;
-
-    @Value("${twilio.from-phone-number}")
-    private String fromPhoneNumber;
-
-    @Value("${twilio.from-alphanumeric-id:WaraLoyer}")
-    private String fromAlphanumericId;
-
-    @Value("${twilio.messaging-service-sid}")
-    private String messagingServiceSid;
+    // Champs contenant les valeurs injectées par Spring
+    private final String accountSid;
+    private final String authToken;
+    private final String fromPhoneNumber;
+    private final String fromAlphanumericId;
+    private final String messagingServiceSid;
 
     private final SmsLogRepository smsLogRepository;
     private final UserService userService;
-
     private final ClientConfigService clientConfigService;
     private final RentalService rentalService;
+
+    // Objets Twilio stables construits après l'injection
+    private com.twilio.type.PhoneNumber whatsappFrom;
+    private com.twilio.type.PhoneNumber smsFrom;
 
     private static final String TYPE_RAPPEL = "RAPPEL";
     private static final String TYPE_RELANCE = "RELANCE";
@@ -63,23 +59,37 @@ public class SmsLogService {
     private static final String TEMPLATE_RAPPEL_SID = "HXb04a3ad68c9b07f708b3465ccad11906";
     private static final String TEMPLATE_RELANCE_URGENTE_SID = "HX440074001e31f9dbc6dee8965e7e89b1";
 
+
     @Autowired
     public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, ClientConfigService clientConfigService, RentalService rentalService,
+                         // Injection des @Value via les paramètres du constructeur
                          @Value("${twilio.account-sid}") String accountSid,
                          @Value("${twilio.auth-token}") String authToken,
                          @Value("${twilio.from-phone-number}") String fromPhoneNumber,
                          @Value("${twilio.from-alphanumeric-id:WaraLoyer}") String fromAlphanumericId,
                          @Value("${twilio.messaging-service-sid}") String messagingServiceSid) {
+
         this.smsLogRepository = smsLogRepository;
         this.userService = userService;
         this.clientConfigService = clientConfigService;
         this.rentalService = rentalService;
-        // ➡️ INITIALISATION DES CHAMPS FINALS ⬅️
+
+        // Initialisation des champs finals (String)
         this.accountSid = accountSid;
         this.authToken = authToken;
         this.fromPhoneNumber = fromPhoneNumber;
         this.fromAlphanumericId = fromAlphanumericId;
         this.messagingServiceSid = messagingServiceSid;
+    }
+
+    /**
+     * S'exécute après que les injections @Value sont terminées, pour construire les objets Twilio.
+     */
+    @PostConstruct
+    private void initTwilioObjects() {
+        Twilio.init(accountSid, authToken);
+        this.whatsappFrom = new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber);
+        this.smsFrom = new com.twilio.type.PhoneNumber(fromPhoneNumber);
     }
 
     /**
@@ -92,14 +102,12 @@ public class SmsLogService {
         smsLog.setType(type);
         smsLog.setSentDate(LocalDate.now());
 
-        final com.twilio.type.PhoneNumber whatsappFrom = new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber);
-        final com.twilio.type.PhoneNumber smsFrom = new com.twilio.type.PhoneNumber(fromPhoneNumber);
-
         try {
             ClientConfig clientConfig = validateAndIncrementLimit(user);
 
             // Exécution du workflow d'envoi (WhatsApp -> Fallback SMS)
-            MessageSendingResult result = executeTwilioSend(user, to, type, scheduleDate, rentalId, clientConfig, whatsappFrom, smsFrom);
+            // Utilisation des champs stables this.whatsappFrom et this.smsFrom
+            MessageSendingResult result = executeTwilioSend(user, to, type, scheduleDate, rentalId, clientConfig);
 
             // Mise à jour finale du log
             smsLog.setStatus(result.status);
@@ -107,6 +115,7 @@ public class SmsLogService {
 
             // Mise à jour de la config si l'envoi a réussi (statut n'est pas FAILED)
             if (!"FAILED".equals(result.status)) {
+                // Le compteur est incrémenté ici SEULEMENT si l'envoi est un succès
                 clientConfig.setMessageCountThisMonth(clientConfig.getMessageCountThisMonth() + 1);
                 clientConfigService.save(clientConfig, user);
             }
@@ -126,9 +135,8 @@ public class SmsLogService {
 
         return smsLogRepository.save(smsLog);
     }
-    /**
-     * Valide les limites et retourne la configuration client.
-     */
+
+    // ... (validateAndIncrementLimit est correct) ...
     private ClientConfig validateAndIncrementLimit(User user) throws MessageLimitExceededException {
         ClientConfig clientConfig = clientConfigService.getByUserId(user.getId())
                 .orElseThrow(() -> new IllegalStateException("Client configuration not found for user: " + user.getId()));
@@ -145,8 +153,7 @@ public class SmsLogService {
     /**
      * Exécute le workflow d'envoi principal (WhatsApp -> Fallback).
      */
-    private MessageSendingResult executeTwilioSend(User user, String to, String type, LocalDateTime scheduleDate, Long rentalId, ClientConfig config,
-                                                   com.twilio.type.PhoneNumber whatsappFrom, com.twilio.type.PhoneNumber smsFrom) { // ⬅️ PARAMÈTRES SUPPLÉMENTAIRES
+    private MessageSendingResult executeTwilioSend(User user, String to, String type, LocalDateTime scheduleDate, Long rentalId, ClientConfig config) {
         try {
             Rental rental = rentalService.findById(rentalId, user).orElseThrow(() -> new IllegalArgumentException("Location non trouvée."));
             String fallbackMessageBody = getFallbackBody(type, config);
@@ -159,12 +166,12 @@ public class SmsLogService {
                     String templateSid = getTemplateSidByType(type);
 
                     // Construction du Creator
-                    MessageCreator creator = buildWhatsappCreator(to, type, isScheduled, scheduleDate, whatsappFrom);
+                    MessageCreator creator = buildWhatsappCreator(to, type, isScheduled, scheduleDate);
                     creator.setContentSid(templateSid);
                     creator.setContentVariables(new JSONObject(variables).toString());
                     creator.create();
 
-                    // ➡️ CORRECTION 3: Enregistrement du corps du message formaté pour la traçabilité ⬅️
+                    // ➡️ CORRECTION : Enregistrement du corps du message formaté pour la traçabilité ⬅️
                     String templateName = getTemplateNameByType(type);
                     String finalBodyForLog = replacePlaceholders(templateName, rental);
 
@@ -174,12 +181,12 @@ public class SmsLogService {
                     logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
 
                     // ➡️ TENTATIVE 2 : SMS FALLBACK ⬅️
-                    return sendSmsFallback(user, to, type, isScheduled, rentalId, fallbackMessageBody, rental, scheduleDate, smsFrom);
+                    return sendSmsFallback(user, to, type, isScheduled, rentalId, fallbackMessageBody, rental, scheduleDate);
                 }
             }
 
             // Si ce n'est pas un type de message connu (ex: confirmation par SMS simple sans template)
-            return sendSmsFallback(user, to, type, isScheduled, rentalId, fallbackMessageBody, rental, scheduleDate, smsFrom);
+            return sendSmsFallback(user, to, type, isScheduled, rentalId, fallbackMessageBody, rental, scheduleDate);
         } catch (Exception e) {
             return new MessageSendingResult("FAILED", e.getMessage());
         }
@@ -188,16 +195,16 @@ public class SmsLogService {
     /**
      * Gère la logique de construction de l'objet MessageCreator pour WhatsApp.
      */
-    private MessageCreator buildWhatsappCreator(String to, String type, boolean isScheduled, LocalDateTime scheduleDate, com.twilio.type.PhoneNumber whatsappFrom) {
+    private MessageCreator buildWhatsappCreator(String to, String type, boolean isScheduled, LocalDateTime scheduleDate) {
         MessageCreator creator;
 
-        // 🛑 CORRECTION TWILIO : Utiliser le fromPhoneNumber explicite (whatsappFrom) pour le FROM
+        // Utilisation du champ this.whatsappFrom (stable)
         if (isScheduled) {
-            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), whatsappFrom, getTemplateNameByType(type));
+            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), this.whatsappFrom, getTemplateNameByType(type));
             creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
             creator.setScheduleType(Message.ScheduleType.FIXED);
         } else {
-            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), whatsappFrom, getTemplateNameByType(type));
+            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), this.whatsappFrom, getTemplateNameByType(type));
         }
         return creator;
     }
@@ -205,7 +212,7 @@ public class SmsLogService {
     /**
      * Gère l'envoi par SMS classique (fallback ou message direct sans template).
      */
-    private MessageSendingResult sendSmsFallback(User user, String to, String type, boolean isScheduled, Long rentalId, String fallbackMessageBody, Rental rental, LocalDateTime scheduleDate, com.twilio.type.PhoneNumber smsFrom) {
+    private MessageSendingResult sendSmsFallback(User user, String to, String type, boolean isScheduled, Long rentalId, String fallbackMessageBody, Rental rental, LocalDateTime scheduleDate) {
         try {
             String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
             String finalSmsBody = replacePlaceholders(fallbackMessageBody, rental);
@@ -219,13 +226,13 @@ public class SmsLogService {
                 smsCreator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
                 smsCreator.setScheduleType(Message.ScheduleType.FIXED);
             } else {
-                // 🛑 CORRECTION 4: Utiliser le PhoneNumber Twilio pour le FROM (pour éviter 21212)
-                smsCreator = Message.creator(new PhoneNumber(to), smsFrom, finalSmsBody);
+                // Utilisation du champ this.smsFrom (stable)
+                smsCreator = Message.creator(new PhoneNumber(to), this.smsFrom, finalSmsBody);
             }
 
             smsCreator.create();
 
-            // Ajout de l'URL pour la traçabilité dans le log, sans double envoi de SMS.
+            // Ajout de l'URL pour la traçabilité dans le log
             finalSmsBody += " | URL: " + problemUrl;
 
             return new MessageSendingResult("SENT_SMS", finalSmsBody);
