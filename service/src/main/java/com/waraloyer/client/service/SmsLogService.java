@@ -63,15 +63,20 @@ public class SmsLogService {
     private static final String TEMPLATE_RAPPEL_SID = "HXb04a3ad68c9b07f708b3465ccad11906";
     private static final String TEMPLATE_RELANCE_URGENTE_SID = "HX440074001e31f9dbc6dee8965e7e89b1";
 
+    private final com.twilio.type.PhoneNumber whatsappFrom;
 
     @Autowired
-    public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, ClientConfigService clientConfigService, RentalService rentalService) {
+    public SmsLogService(SmsLogRepository smsLogRepository, UserService userService, ClientConfigService clientConfigService, RentalService rentalService ) {
         this.smsLogRepository = smsLogRepository;
         this.userService = userService;
         this.clientConfigService = clientConfigService;
         this.rentalService = rentalService;
+        this.whatsappFrom = new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber);
     }
 
+    /**
+     * Point d'entrée pour l'envoi d'un message. Gère la validation et la journalisation.
+     */
     public SmsLog sendSms(User user, String to, String type, LocalDateTime scheduleDate, Long rentalId) {
         SmsLog smsLog = new SmsLog();
         smsLog.setUser(user);
@@ -79,138 +84,194 @@ public class SmsLogService {
         smsLog.setType(type);
         smsLog.setSentDate(LocalDate.now());
 
-        Optional<ClientConfig> clientConfigOptional = clientConfigService.getByUserId(user.getId());
-        if (clientConfigOptional.isEmpty()) {
-            throw new IllegalStateException("Client configuration not found for user: " + user.getId());
+        try {
+            // 1. Validation de l'abonnement et des limites (Externalisation partielle)
+            ClientConfig clientConfig = validateAndIncrementLimit(user);
+
+            // 2. Initialisation Twilio (Doit être fait une seule fois au runtime, mais est répétée ici pour simplicité)
+            Twilio.init(accountSid, authToken);
+
+            // 3. Exécution du workflow d'envoi (WhatsApp -> Fallback SMS)
+            MessageSendingResult result = executeTwilioSend(user, to, type, scheduleDate, rentalId, clientConfig);
+
+            // 4. Mise à jour finale du log
+            smsLog.setStatus(result.status);
+            smsLog.setMessage(result.messageBody);
+
+            // Mise à jour de la config si l'envoi a réussi (statut n'est pas FAILED)
+            if (!"FAILED".equals(result.status)) {
+                clientConfig.setMessageCountThisMonth(clientConfig.getMessageCountThisMonth() + 1);
+                clientConfigService.save(clientConfig, user);
+            }
+
+        } catch (MessageLimitExceededException e) {
+            smsLog.setStatus("FAILED");
+            smsLog.setMessage("Limite atteinte: " + e.getMessage());
+        } catch (Exception finalException) {
+            smsLog.setStatus("FAILED");
+            smsLog.setMessage(finalException.getMessage());
+            logger.error("Échec total de l'envoi de type '{}' au numéro {}: {}", type, to, finalException.getMessage());
+        } finally {
+            // Journalisation du loyer
+            if (rentalId != null) {
+                smsLog.setRental(rentalService.findById(rentalId, user).orElse(null));
+            }
         }
-        ClientConfig clientConfig = clientConfigOptional.get();
+
+        return smsLogRepository.save(smsLog);
+    }
+
+    /**
+     * Valide les limites et retourne la configuration client.
+     */
+    private ClientConfig validateAndIncrementLimit(User user) throws MessageLimitExceededException {
+        ClientConfig clientConfig = clientConfigService.getByUserId(user.getId())
+                .orElseThrow(() -> new IllegalStateException("Client configuration not found for user: " + user.getId()));
+
         Integer monthlySmsLimit = user.getSubscription().getMonthlySmsLimit();
         Integer messageCount = clientConfig.getMessageCountThisMonth();
 
         if (messageCount != null && monthlySmsLimit != null && messageCount >= monthlySmsLimit) {
             throw new MessageLimitExceededException("La limite de messages mensuelle a été atteinte.");
         }
-
-        String fallbackMessage = "Le service de messagerie est temporairement indisponible. Veuillez contacter le propriétaire.";
-        if ("RAPPEL".equals(type)) {
-            fallbackMessage = clientConfig.getSmsReminderMessage();
-        } else if ("RELANCE".equals(type)) {
-            fallbackMessage = clientConfig.getSmsRelanceMessage();
-        } else if ("RELANCE_URGENTE".equals(type)) {
-            fallbackMessage = "Rappel urgent : le loyer de {MONTANT} FCFA pour le bien situé au {ADRESSE_BIEN} est en retard. Merci de régulariser.";
-        }
-
-        String finalMessageBody = null;
-        boolean isScheduled = scheduleDate != null;
-
-        try {
-            Twilio.init(accountSid, authToken);
-
-            if (type.equals("RELANCE") || type.equals("RAPPEL") || type.equals("RELANCE_URGENTE")) {
-                try {
-                    String templateSid = getTemplateSidByType(type);
-                    Rental rental = rentalService.findById(rentalId, user).orElseThrow(() -> new IllegalArgumentException("Location non trouvée."));
-
-                    Map<String, String> variables = new HashMap<>();
-                    switch (type) {
-                        case "RAPPEL", "RELANCE" -> {
-                            variables.put("1", rental.getTenant().getFirstName());
-                            variables.put("2", rental.getProperty().getAddress());
-                            if (type.equals("RAPPEL")) {
-                                variables.put("3", rental.getDueDate().toString());
-                            }
-                        }
-                        case "RELANCE_URGENTE" -> {
-                            variables.put("1", String.valueOf(rental.getAmountDue()));
-                            variables.put("2", rental.getProperty().getAddress());
-                            String problemUrl = "https://waraloyer.com/tenant-problem/" + rental.getId();
-                            variables.put("3", problemUrl);
-                        }
-                    }
-
-                    MessageCreator creator;
-                    if (isScheduled) {
-                        creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), messagingServiceSid, getTemplateNameByType(type));
-                        creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
-                        creator.setScheduleType(Message.ScheduleType.FIXED);
-                    } else {
-                        creator = Message.creator(
-                                new com.twilio.type.PhoneNumber("whatsapp:" + to),
-                                new com.twilio.type.PhoneNumber("whatsapp:" + fromPhoneNumber),
-                                getTemplateNameByType(type)
-                        );
-                    }
-                    creator.setContentSid(templateSid);
-                    creator.setContentVariables(new JSONObject(variables).toString());
-                    creator.create();
-
-                    String templateBody = getTemplateNameByType(type); // Ou récupérez le corps du template
-                    // Utilisez votre fonction utilitaire
-
-                    finalMessageBody = replacePlaceholders(templateBody, rental);
-                    smsLog.setStatus("SENT_WHATSAPP");
-
-
-                } catch (Exception whatsappException) {
-                    logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
-                    finalMessageBody = replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null));
-
-                    MessageCreator smsCreator;
-                    String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
-
-                    if (isScheduled) {
-                        smsCreator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalMessageBody);
-                        smsCreator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
-                        smsCreator.setScheduleType(Message.ScheduleType.FIXED);
-                        smsCreator.create();
-
-                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), messagingServiceSid, problemUrl);
-                        smsCreator2.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
-                        smsCreator2.setScheduleType(Message.ScheduleType.FIXED);
-                        smsCreator2.create();
-                    } else {
-                        smsCreator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalMessageBody);
-                        smsCreator.create();
-
-                        MessageCreator smsCreator2 = Message.creator(new PhoneNumber(to), fromAlphanumericId, problemUrl);
-                        smsCreator2.create();
-                    }
-
-                    finalMessageBody += " | URL: " + problemUrl;
-                    smsLog.setStatus("SENT_SMS");
-                }
-            } else {
-                finalMessageBody = replacePlaceholders(fallbackMessage, rentalService.findById(rentalId, user).orElse(null));
-                MessageCreator creator;
-                if (isScheduled) {
-                    creator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalMessageBody);
-                    creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
-                    creator.setScheduleType(Message.ScheduleType.FIXED);
-                } else {
-                    creator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalMessageBody);
-                }
-                creator.create();
-                smsLog.setStatus("SENT_SMS");
-            }
-
-            clientConfig.setMessageCountThisMonth(clientConfig.getMessageCountThisMonth() + 1);
-            clientConfigService.save(clientConfig,user);
-
-        } catch (Exception finalException) {
-            smsLog.setStatus("FAILED");
-            finalMessageBody = finalException.getMessage();
-            logger.error("Échec total de l'envoi de message de type '{}' au numéro {}: {}", type, to, finalException.getMessage());
-        } finally {
-            if (rentalId != null) {
-                smsLog.setRental(rentalService.findById(rentalId, user).orElse(null));
-            }
-        }
-
-        smsLog.setMessage(finalMessageBody);
-
-        return smsLogRepository.save(smsLog);
+        return clientConfig;
     }
 
+    /**
+     * Exécute le workflow d'envoi principal (WhatsApp -> Fallback).
+     */
+    private MessageSendingResult executeTwilioSend(User user, String to, String type, LocalDateTime scheduleDate, Long rentalId, ClientConfig config) {
+
+        // 1. Charger les données nécessaires (Rental, Fallback Message)
+        Rental rental = rentalService.findById(rentalId, user).orElseThrow(() -> new IllegalArgumentException("Location non trouvée."));
+        String fallbackMessageBody = getFallbackBody(type, config);
+        boolean isScheduled = scheduleDate != null;
+
+        if (type.equals(TYPE_RAPPEL) || type.equals(TYPE_RELANCE) || type.equals(TYPE_RELANCE_URGENTE)) {
+            try {
+                // ➡️ TENTATIVE 1 : WHATSAPP (Templates) ⬅️
+                Map<String, String> variables = buildTemplateVariables(rental, type);
+                String templateSid = getTemplateSidByType(type);
+
+                // Construction de l'objet Creator (Méthode séparée)
+                MessageCreator creator = buildWhatsappCreator(to, type, isScheduled, scheduleDate);
+                creator.setContentSid(templateSid);
+                creator.setContentVariables(new JSONObject(variables).toString());
+                creator.create();
+
+                // Traçabilité : Enregistrement du message formaté (même si Twilio gère le template)
+                String templateName = getTemplateNameByType(type);
+                String finalBodyForLog = replacePlaceholders(templateName, rental); // Utilisez le template name pour un log simple
+
+                return new MessageSendingResult("SENT_WHATSAPP", finalBodyForLog);
+
+            } catch (Exception whatsappException) {
+                logger.warn("Échec de l'envoi via WhatsApp. Tentative d'envoi par SMS: {}", whatsappException.getMessage());
+
+                // ➡️ TENTATIVE 2 : SMS FALLBACK ⬅️
+                return sendSmsFallback(user, to, type, isScheduled, rentalId, fallbackMessageBody, rental, scheduleDate);
+            }
+        }
+
+        return sendSmsFallback(user, to, type, isScheduled, rentalId, fallbackMessageBody, rental, scheduleDate);
+    }
+
+    /**
+     * Gère la logique de construction de l'objet MessageCreator pour WhatsApp.
+     */
+    private MessageCreator buildWhatsappCreator(String to, String type, boolean isScheduled, LocalDateTime scheduleDate) {
+        MessageCreator creator;
+
+        if (isScheduled) {
+            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), whatsappFrom, getTemplateNameByType(type));
+            creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
+            creator.setScheduleType(Message.ScheduleType.FIXED);
+        } else {
+            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), whatsappFrom, getTemplateNameByType(type));
+        }
+        return creator;
+    }
+
+    /**
+     * Gère l'envoi par SMS classique (fallback ou message direct sans template).
+     */
+    private MessageSendingResult sendSmsFallback(User user, String to, String type, boolean isScheduled, Long rentalId, String fallbackMessageBody, Rental rental, LocalDateTime scheduleDate) {        try {
+            String problemUrl = "https://waraloyer.com/tenant-problem/" + rentalId;
+            String finalSmsBody = replacePlaceholders(fallbackMessageBody, rental);
+
+            // CONVENTION CLEAN CODE: Un seul appel à Message.creator par envoi
+            MessageCreator smsCreator;
+
+            if (isScheduled) {
+                // Envoi planifié via SID
+                smsCreator = Message.creator(new PhoneNumber(to), messagingServiceSid, finalSmsBody);
+                smsCreator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
+                smsCreator.setScheduleType(Message.ScheduleType.FIXED);
+            } else {
+                // Envoi immédiat via ID Alphanumérique
+                smsCreator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalSmsBody);
+            }
+
+            smsCreator.create();
+
+            // Ajout de l'URL pour la traçabilité dans le log, sans double envoi de SMS.
+            finalSmsBody += " | URL: " + problemUrl;
+
+            return new MessageSendingResult("SENT_SMS", finalSmsBody);
+        } catch (Exception e) {
+            logger.error("Échec de l'envoi SMS de fallback : {}", e.getMessage());
+            return new MessageSendingResult("FAILED", e.getMessage());
+        }
+    }
+
+    /**
+     * Détermine le corps du message de fallback/défaut.
+     */
+    private String getFallbackBody(String type, ClientConfig config) {
+        return switch (type) {
+            case TYPE_RAPPEL -> config.getSmsReminderMessage();
+            case TYPE_RELANCE -> config.getSmsRelanceMessage();
+            case TYPE_RELANCE_URGENTE -> "Rappel urgent : le loyer de {MONTANT} FCFA pour le bien situé au {ADRESSE_BIEN} est en retard. Merci de régulariser.";
+            default -> "Le service de messagerie est temporairement indisponible. Veuillez contacter le propriétaire.";
+        };
+    }
+
+    /**
+     * Construit les variables dynamiques pour le template Twilio Content SID.
+     */
+    private Map<String, String> buildTemplateVariables(Rental rental, String type) {
+        Map<String, String> variables = new HashMap<>();
+
+        switch (type) {
+            case TYPE_RAPPEL, TYPE_RELANCE -> {
+                variables.put("1", rental.getTenant().getFirstName());
+                variables.put("2", rental.getProperty().getAddress());
+                if (type.equals(TYPE_RAPPEL)) {
+                    variables.put("3", rental.getDueDate().toString());
+                }
+            }
+            case TYPE_RELANCE_URGENTE -> {
+                variables.put("1", String.valueOf(rental.getAmountDue()));
+                variables.put("2", rental.getProperty().getAddress());
+                String problemUrl = "https://waraloyer.com/tenant-problem/" + rental.getId();
+                variables.put("3", problemUrl);
+            }
+        }
+        return variables;
+    }
+
+    /**
+     * Classe DTO interne pour encapsuler le résultat de l'envoi.
+     */
+    private static class MessageSendingResult {
+        final String status;
+        final String messageBody;
+
+        public MessageSendingResult(String status, String messageBody) {
+            this.status = status;
+            this.messageBody = messageBody;
+        }
+    }
 
     private String replacePlaceholders(String message, Rental rental) {
         if (rental == null) return message;
