@@ -200,11 +200,11 @@ public class SmsLogService {
 
         // Utilisation du champ this.whatsappFrom (stable)
         if (isScheduled) {
-            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), this.whatsappFrom, getTemplateNameByType(type));
+            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), messagingServiceSid, getTemplateNameByType(type));
             creator.setSendAt(scheduleDate.atZone(ZoneId.systemDefault()));
             creator.setScheduleType(Message.ScheduleType.FIXED);
         } else {
-            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), this.whatsappFrom, getTemplateNameByType(type));
+            creator = Message.creator(new com.twilio.type.PhoneNumber("whatsapp:" + to), messagingServiceSid, getTemplateNameByType(type));
         }
         return creator;
     }
@@ -227,7 +227,7 @@ public class SmsLogService {
                 smsCreator.setScheduleType(Message.ScheduleType.FIXED);
             } else {
                 // Utilisation du champ this.smsFrom (stable)
-                smsCreator = Message.creator(new PhoneNumber(to), this.smsFrom, finalSmsBody);
+                smsCreator = Message.creator(new PhoneNumber(to), fromAlphanumericId, finalSmsBody);
             }
 
             smsCreator.create();
