@@ -52,5 +52,5 @@ spring.datasource.password=votre_mot_de_passe
 
 ## 👤 Auteur
 
-Développé par **[Votre Nom]** — Développeur Full-Stack (Java/Spring, Angular, React/Next.js)
+Développé par **Kouamé-Kodia** — Développeur Full-Stack (Java/Spring, Angular, React/Next.js)
 [LinkedIn] · [GitHub](https://github.com/nkkodia)
