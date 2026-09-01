@@ -1,0 +1,29 @@
+# application.yml (fichier principal)
+spring:
+  profiles:
+    active: prod
+  mail:
+    host: smtp.gmail.com  # Le serveur SMTP de votre fournisseur
+    port: 587                      # 587 (TLS) ou 465 (SSL)
+    username: waraloyer@gmail.com
+    password: uvrlsvovsunqydwi
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+management:
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      access: read_only
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+      base-path: /management
+    access:
+      default: read_only

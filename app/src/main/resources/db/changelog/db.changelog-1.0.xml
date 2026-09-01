@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <include file="db/changelog/01-create-tables.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/02-add-defaults-to-rental-table.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/03-add-columns-to-sms-log.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/04-create-expense-table.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/07-add-sms-limits-to-client-config.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/08-create-subscription-table.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/11-add-price-column-to-subscription.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/09-update-subscriptions.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/10-add-subscription-to-user.sql" relativeToChangelogFile="false"/>
+    <include file="/db/changelog/12-create-tenant-message-log-table.sql" relativeToChangelogFile="false"/>
+    <include file="/db/changelog/14-add-enabled-column-to-tenant-table.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/15-create-password-reset-token-table.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/16-add-property-limit-to-subscription.sql" relativeToChangelogFile="false"/>
+
+</databaseChangeLog>

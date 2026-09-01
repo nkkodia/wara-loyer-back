@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-1.0.xml
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+waraloyer:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration-ms: 3600000 # 1 heure
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID}
+  auth-token: ${TWILIO_AUTH_TOKEN}
+  from-phone-number: ${TWILIO_PHONE_NUMBER}
+  from-alphanumeric-id: WaraLoyer # Ajoutez cette nouvelle ligne
+  messaging-service-sid: MG9a049346e582b64c136147429a2f0af4

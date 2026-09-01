@@ -1,0 +1,40 @@
+# Ignorer les artefacts de construction
+target/
+*.jar
+*.war
+*.class
+
+# Ignorer les fichiers de configuration IDE
+### IntelliJ IDEA ###
+.idea/
+*.iml
+
+### Eclipse ###
+.classpath
+.project
+.settings/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+
+### VS Code ###
+.vscode/
+
+# Ignorer les fichiers de cache
+.DS_Store
+*.log
+
+# Ignorer le répertoire de construction Gradle
+build/
+!**/src/**/build/   # Conserver les fichiers de construction pour les tests
+
+# Ignorer les fichiers de dépendances Maven
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# Ignorer les fichiers temporaires et de configuration de l'utilisateur
+*.swp
+*.swo
+*.tmp

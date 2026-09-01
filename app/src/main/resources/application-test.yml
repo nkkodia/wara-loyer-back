@@ -1,0 +1,34 @@
+# src/test/resources/application-test.yml
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/waraloyer_dev
+    username: waraloyer_user
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # Ou 'create', 'create-drop', 'validate', 'none'
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-1.0.xml
+  # 2. Désactivation du Planificateur de Tâches
+  task:
+    scheduling:
+      enabled: false # <-- AJOUTEZ CETTE LIGNE
+
+twilio:
+  account-sid: ACxxxxxxxxxxxxxx
+  auth-token: FakeAuthToken
+  phone-number: +15005550000
+  from-phone-number: +15005550000
+  messaging-service-sid: MGxxxxxxxxxxxxxx
+waraloyer:
+  security:
+    jwt:
+      secret: ThisIsAFakeSecretKeyForTestingIntegrationTestsAndItShouldBeLongEnough
+      expiration-ms: 86400000

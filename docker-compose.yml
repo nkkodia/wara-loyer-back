@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16.1-alpine # Vous pouvez choisir une autre version de Postgres
+    container_name: postgres_db
+    restart: always
+    environment:
+      # Ces variables sont cruciales pour la configuration de la BDD
+      POSTGRES_DB: waraloyer_dev # Correspond à votre 'waraloyer_dev'
+      POSTGRES_USER: waraloyer_user # Correspond à votre 'waraloyer_user'
+      POSTGRES_PASSWORD: password # Correspond à votre 'password'
+    ports:
+      - "5432:5432" # Mappe le port 5432 du conteneur au port 5432 de votre machine locale
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Volume pour persister les données
+      # Optionnel : pour initialiser la BDD avec des scripts
+      # - ./src/main/resources/db/init:/docker-entrypoint-initdb.d
+
+volumes:
+  postgres_data:
